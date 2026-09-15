@@ -40,6 +40,7 @@ import {
 import { formatBytes, formatDur, formatWhen, shortLabel } from "./format";
 import { skillPlacementModel, skillTargetFor } from "./skill-placement";
 import { SensitiveReview } from "./SensitiveReview";
+import { AnalysisRecovery, completeSignIn, type AnalysisRun } from "./analysis-recovery";
 
 export function Library() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
@@ -412,17 +413,97 @@ function DebugDownload({ sessionId }: { sessionId: string }) {
 
 /**
  * Error banner for the Copilot-backed panels. When the CLI has no credentials the app
- * offers to open a terminal on its *bundled* Copilot binary — there's no global
- * `copilot` command to send people to.
+ * waits for verified authentication. Only analysis supplies a recovery callback;
+ * building, creating and installing always require another explicit user action.
  */
-function AnalysisError({ error }: { error: string }) {
+function AnalysisError({
+  error,
+  onAuthenticated,
+  onSignInStart,
+  onSignInEnd,
+}: {
+  error: string;
+  onAuthenticated?: () => void | Promise<void>;
+  onSignInStart?: () => boolean;
+  onSignInEnd?: (canceled: boolean) => void;
+}) {
   const [signIn, setSignIn] = useState<CopilotSignInResult | null>(null);
-  const [opening, setOpening] = useState(false);
+  const [waiting, setWaiting] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+  const attempt = useRef<string | null>(null);
+  const generation = useRef(0);
+  const live = useRef(false);
+  const endCallback = useRef(onSignInEnd);
+  endCallback.current = onSignInEnd;
+
+  useEffect(() => {
+    live.current = true;
+    setWaiting(false);
+    setSignIn(null);
+    setFailure(null);
+    return () => {
+      live.current = false;
+      generation.current++;
+      const id = attempt.current;
+      attempt.current = null;
+      if (id) {
+        endCallback.current?.(true);
+        void window.skillRecorder.cancelCopilotSignIn(id).catch(() => {
+          console.warn("Could not cancel Copilot sign-in during panel cleanup.");
+        });
+      }
+    };
+  }, [error]);
+
+  const cancelSignIn = async () => {
+    const id = attempt.current;
+    if (!id) return;
+    const canceledGeneration = generation.current;
+    attempt.current = null;
+    onSignInEnd?.(true);
+    setWaiting(false);
+    setFailure(onAuthenticated
+      ? "Sign-in canceled. Analysis will not retry automatically."
+      : "Sign-in canceled.");
+    try {
+      await window.skillRecorder.cancelCopilotSignIn(id);
+    } catch (err) {
+      if (live.current && generation.current === canceledGeneration) {
+        setFailure(`Could not cancel sign-in: ${String(err)}`);
+      }
+    }
+  };
 
   const openSignIn = async () => {
-    setOpening(true);
-    setSignIn(await window.skillRecorder.copilotSignIn());
-    setOpening(false);
+    if (attempt.current) return;
+    const id = crypto.randomUUID();
+    generation.current++;
+    attempt.current = id;
+    setWaiting(true);
+    setSignIn(null);
+    setFailure(null);
+    let canceledResult = false;
+    try {
+      // A false return suppresses stale recovery without suppressing sign-in itself.
+      const recover = onSignInStart?.() ?? true;
+      const result = await completeSignIn(
+        window.skillRecorder.copilotSignIn(id),
+        () => live.current && attempt.current === id,
+        recover ? onAuthenticated : undefined,
+      );
+      if (result && live.current && attempt.current === id) {
+        canceledResult = !result.ok && result.status === "canceled";
+        setSignIn(result);
+      }
+    } catch (err) {
+      if (live.current && attempt.current === id) setFailure(String(err));
+    } finally {
+      if (live.current && attempt.current === id) {
+        attempt.current = null;
+        onSignInEnd?.(canceledResult);
+        setWaiting(false);
+      }
+    }
   };
 
   if (!isCopilotSignedOutError(error)) return <div className="analysis-error">{error}</div>;
@@ -431,15 +512,28 @@ function AnalysisError({ error }: { error: string }) {
     <div className="analysis-error">
       <p>{error}</p>
       <div className="signin-row">
-        <button className="row-action" onClick={() => void openSignIn()} disabled={opening}>
-          {opening ? "Opening…" : "Sign in to Copilot"}
+        <button className="row-action" onClick={() => void openSignIn()} disabled={waiting}>
+          {waiting ? "Waiting for browser sign-in…" : "Sign in to Copilot"}
         </button>
-        {signIn?.ok && (
-          <span>A terminal opened — finish signing in there, then try again.</span>
+        {waiting && (
+          <>
+            <span role="status">Follow the app prompts and finish signing in in your browser.</span>
+            <button className="linky" onClick={() => void cancelSignIn()}>Cancel sign-in</button>
+          </>
         )}
-        {signIn && !signIn.ok && <span>{signIn.error ?? "Couldn't open a terminal."}</span>}
+        {signIn?.ok && (
+          <span>Signed in to Copilot. Try your action again when ready.</span>
+        )}
+        {signIn && !signIn.ok && (
+          <span>{signIn.error ?? (
+            signIn.status === "canceled" ? "Sign-in canceled." :
+            signIn.status === "timed-out" ? "Sign-in timed out. Try again." :
+            "Couldn't sign in to Copilot."
+          )}</span>
+        )}
+        {failure && <span role="alert">{failure}</span>}
       </div>
-      {signIn?.command && (
+      {signIn && !signIn.ok && signIn.command && (
         <>
           <p className="signin-manual">Or run this command yourself:</p>
           <code className="signin-command">{signIn.command}</code>
@@ -478,6 +572,13 @@ function AnalysisWorkspace({
 
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [signInPending, setSignInPending] = useState(false);
+  const signInPendingRef = useRef(false);
+  const pendingRecovery = useRef<AnalysisRun | null>(null);
+  const recovery = useRef(new AnalysisRecovery());
+  const [failedRun, setFailedRun] = useState<AnalysisRun | null>(null);
+  const latestRun = useRef<AnalysisRun | null>(null);
+  const workspaceLive = useRef(false);
   const [statusLine, setStatusLine] = useState("");
   const [error, setError] = useState<string | null>(null);
   // Informational summary of what the on-device scan redacted before sending;
@@ -505,9 +606,15 @@ function AnalysisWorkspace({
         : "none";
   const [launch, setLaunch] = useState<LaunchTarget>(initialLaunch);
   const [chosenArch, setChosenArch] = useState<SkillArchitecture>(DEFAULT_TARGET.architecture);
-  // Set while the user is deliberately canceling, so the aborted run's rejection
-  // doesn't surface as an error toast.
-  const canceled = useRef(false);
+  useEffect(() => {
+    workspaceLive.current = true;
+    return () => {
+      workspaceLive.current = false;
+      recovery.current.invalidate();
+      signInPendingRef.current = false;
+      pendingRecovery.current = null;
+    };
+  }, [sessionId]);
 
   useEffect(() => {
     let live = true;
@@ -561,40 +668,106 @@ function AnalysisWorkspace({
     return window.skillRecorder.onAnalyzeProgress((p: AnalyzeProgress) => {
       if (p.sessionId !== sessionId) return;
       setStatusLine(p.message);
-      if (p.phase === "done" || p.phase === "error") setAnalyzing(false);
+      // The invocation, not a progress event, owns the busy state.
     });
   }, [sessionId]);
 
-  const run = useCallback(
-    async () => {
-      canceled.current = false;
+  const executeRun = useCallback(
+    async (token: AnalysisRun) => {
+      latestRun.current = token;
       setEditing(false);
       setDraftTitle("");
       setDraftIntent("");
       setReview(null);
       setError(null);
       setAnalyzing(true);
+      setFailedRun(null);
       setStatusLine("Starting…");
-      const res = await window.skillRecorder.analyze(sessionId);
-      if (res.ok && res.analysis) {
-        setAnalysis(res.analysis);
-        setSteps(res.analysis.steps);
-        stepsDirty.current = false;
-        // Non-blocking: analysis already ran. If anything was redacted before it
-        // was sent, show an informational summary alongside the result.
-        setReview(res.review ?? null);
-      } else if (!canceled.current) setError(res.error ?? "Analysis failed");
-      setAnalyzing(false);
-      void onChanged();
+      let signedOut = false;
+      try {
+        const res = await window.skillRecorder.analyze(sessionId);
+        if (!workspaceLive.current || !recovery.current.accepts(token)) return;
+        if (res.ok && res.analysis) {
+          setAnalysis(res.analysis);
+          setSteps(res.analysis.steps);
+          stepsDirty.current = false;
+          // Preserve the existing narration/redaction pipeline and result handling.
+          setReview(res.review ?? null);
+        } else {
+          const message = res.error ?? "Analysis failed";
+          signedOut = isCopilotSignedOutError(message);
+          setError(message);
+          setFailedRun(token);
+        }
+      } catch (err) {
+        if (workspaceLive.current && recovery.current.accepts(token)) {
+          const message = String(err);
+          signedOut = isCopilotSignedOutError(message);
+          setError(message);
+          setFailedRun(token);
+        }
+      } finally {
+        if (workspaceLive.current && recovery.current.isCurrent(token)) {
+          recovery.current.finishRun(token, signedOut);
+          setAnalyzing(false);
+          try {
+            await onChanged();
+          } catch (err) {
+            // A refresh failure must not be mistaken for an interrupted analysis.
+            if (workspaceLive.current && latestRun.current === token) {
+              setFailedRun(null);
+              setError(`Could not refresh recordings: ${String(err)}`);
+            }
+          }
+        }
+      }
     },
     [sessionId, onChanged],
   );
 
+  const run = useCallback(async () => {
+    if (signInPendingRef.current) return;
+    const token = recovery.current.beginRun();
+    if (token) await executeRun(token);
+  }, [executeRun]);
+
+  const onSignInStart = useCallback(() => {
+    signInPendingRef.current = true;
+    setSignInPending(true);
+    setConfirmReanalysis(false);
+    const recover = failedRun != null && recovery.current.beginSignIn(failedRun);
+    pendingRecovery.current = recover ? failedRun : null;
+    return recover;
+  }, [failedRun]);
+
+  const onSignInEnd = useCallback((canceled: boolean) => {
+    signInPendingRef.current = false;
+    if (pendingRecovery.current) recovery.current.endSignIn(pendingRecovery.current, canceled);
+    pendingRecovery.current = null;
+    if (workspaceLive.current) setSignInPending(false);
+  }, []);
+
+  const retryAfterSignIn = useCallback(async () => {
+    if (!workspaceLive.current || !failedRun) return;
+    const token = recovery.current.retry(failedRun);
+    if (!token) return;
+    signInPendingRef.current = false;
+    setSignInPending(false);
+    await executeRun(token);
+  }, [failedRun, executeRun]);
+
   const cancel = useCallback(async () => {
-    canceled.current = true;
+    const token = latestRun.current;
+    recovery.current.cancelRun();
     setStatusLine("Stopping…");
-    await window.skillRecorder.cancelAnalysis(sessionId);
-    setAnalyzing(false);
+    try {
+      await window.skillRecorder.cancelAnalysis(sessionId);
+    } catch (err) {
+      if (workspaceLive.current && latestRun.current === token) {
+        setFailedRun(null);
+        setError(`Could not cancel analysis: ${String(err)}`);
+      }
+    }
   }, [sessionId]);
 
   const startEdit = useCallback(() => {
@@ -602,6 +775,7 @@ function AnalysisWorkspace({
     setDraftTitle(analysis.title ?? "");
     setDraftIntent(analysis.intent);
     setError(null);
+    setFailedRun(null);
     setEditing(true);
   }, [analysis]);
 
@@ -615,6 +789,7 @@ function AnalysisWorkspace({
       setAnalysis(res.analysis);
       setEditing(false);
     } else {
+      setFailedRun(null);
       setError(res.error ?? "Could not save your changes");
     }
     void onChanged();
@@ -681,7 +856,7 @@ function AnalysisWorkspace({
           </p>
         )}
 
-        {voiceStale && !analyzing && (
+        {voiceStale && !analyzing && !signInPending && (
           <div className="voice-card">
             <div className="voice-card-copy">
               <strong>Voice transcript added after this analysis</strong>
@@ -717,7 +892,7 @@ function AnalysisWorkspace({
         {summary.processed && !analysis && !analyzing && (
           <div className="ws-empty">
             <p className="ws-empty-lead">See what you did in this recording, step by step.</p>
-            <button className="record-cta" onClick={() => void run()}>
+            <button className="record-cta" onClick={() => void run()} disabled={signInPending}>
               Analyze recording
             </button>
             <details className="analyze-disclosure">
@@ -768,9 +943,16 @@ function AnalysisWorkspace({
           </p>
         )}
 
-        {error && <AnalysisError error={error} />}
+        {error && (
+          <AnalysisError
+            error={error}
+            onSignInStart={onSignInStart}
+            onSignInEnd={onSignInEnd}
+            onAuthenticated={failedRun && !failedRun.retried ? retryAfterSignIn : undefined}
+          />
+        )}
 
-        {analysis && !analyzing && (
+        {analysis && !analyzing && !signInPending && (
           <div className="ws-read">
             <div className="summary">
               <div className="summary-head">
@@ -843,7 +1025,7 @@ function AnalysisWorkspace({
         )}
       </div>
 
-      {analysis && !analyzing && (
+      {analysis && !analyzing && !signInPending && (
         <div className="ws-foot">
           <span className="foot-status">{launchFootStatus(summary)}</span>
           <div className="ws-foot-actions">
