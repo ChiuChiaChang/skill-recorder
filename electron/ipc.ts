@@ -1,4 +1,5 @@
 import {
+  app,
   BrowserWindow,
   dialog,
   ipcMain,
@@ -32,7 +33,7 @@ import type { NarrationLanguage } from "../common/narration";
 import type { SensitiveReport } from "../common/sensitive";
 import type { SkillPlan } from "../common/skill";
 import { AutomationBuilder, loadPersistedAutomation } from "./automationbuilder/builder";
-import { openCopilotSignIn } from "./copilot-signin";
+import { cancelCopilotSignIn, disposeCopilotSignIn, openCopilotSignIn } from "./copilot-signin";
 import { buildDebugInfo, writeDebugBundle } from "./debug-bundle";
 import { Describer, loadPersistedAnalysis } from "./describer/describer";
 import type { RedactionContext } from "./describer/tools";
@@ -163,7 +164,24 @@ export function registerIpc(
   ipcMain.handle(IPC.status, () => recorder.status());
   ipcMain.handle(IPC.marker, (_event, note: string) => recorder.marker(note));
   ipcMain.handle(IPC.doctor, () => runDoctor());
-  ipcMain.handle(IPC.copilotSignIn, () => openCopilotSignIn());
+  app.once("before-quit", disposeCopilotSignIn);
+  ipcMain.handle(IPC.copilotSignIn, async (event, attemptId: unknown) => {
+    if (typeof attemptId !== "string" || !/^[a-zA-Z0-9-]{1,64}$/.test(attemptId)) {
+      return { ok: false, status: "failed", error: "Invalid sign-in attempt." };
+    }
+    const owner = event.sender.id;
+    const cancel = () => cancelCopilotSignIn(attemptId, owner);
+    event.sender.once("destroyed", cancel);
+    try {
+      return await openCopilotSignIn(attemptId, owner, BrowserWindow.fromWebContents(event.sender));
+    } finally {
+      event.sender.removeListener("destroyed", cancel);
+    }
+  });
+  ipcMain.handle(IPC.copilotSignInCancel, (event, attemptId: unknown) => {
+    if (typeof attemptId !== "string") throw new Error("Invalid sign-in attempt.");
+    cancelCopilotSignIn(attemptId, event.sender.id);
+  });
   ipcMain.handle(IPC.narrationStatus, () => narration.status());
   ipcMain.handle(IPC.narrationDownload, () => narration.downloadModel());
   ipcMain.handle(IPC.narrationTranscribe, (_event, sessionId: string) =>

@@ -373,13 +373,16 @@ export interface CopilotInfo {
   path: string | null;
 }
 
-/** Result of asking the app to open a terminal on the bundled CLI's sign-in command. */
-export interface CopilotSignInResult {
-  ok: boolean;
-  /** The exact command the terminal was asked to run, so the user can run it themselves. */
-  command?: string;
-  error?: string;
-}
+/** Success means the bundled CLI completed login and a fresh SDK client verified it. */
+export type CopilotSignInResult =
+  | { ok: true; status: "authenticated" }
+  | {
+      ok: false;
+      status: "failed" | "canceled" | "timed-out";
+      /** Manual fallback; never includes credentials. */
+      command?: string;
+      error?: string;
+    };
 
 /**
  * Message every Copilot-backed feature throws when the CLI has no stored credentials.
@@ -449,6 +452,7 @@ export const IPC = {
   marker: "recorder:marker",
   doctor: "doctor:check",
   copilotSignIn: "copilot:sign-in",
+  copilotSignInCancel: "copilot:sign-in-cancel",
   statusChanged: "recorder:status-changed",
   recordingPrivacyReviewed: "recorder:privacy-reviewed",
   recordingPrivacyWarningRequested: "recorder:privacy-warning-requested",
@@ -526,10 +530,11 @@ export interface SkillRecorderApi {
   marker(note: string): Promise<MarkerResult>;
   doctor(): Promise<DoctorReport>;
   /**
-   * Open a terminal window running the bundled Copilot CLI's `login` command, so the
-   * user can sign in without a globally installed `copilot`.
+   * Sign in through the browser using the bundled CLI and verify authentication.
+   * The attempt ID scopes cancellation to the requesting panel.
    */
-  copilotSignIn(): Promise<CopilotSignInResult>;
+  copilotSignIn(attemptId: string): Promise<CopilotSignInResult>;
+  cancelCopilotSignIn(attemptId: string): Promise<void>;
   onStatusChanged(cb: (status: RecorderStatus) => void): () => void;
   openTerminal(): Promise<TerminalActionResult>;
   terminalReady(): Promise<TerminalActionResult>;

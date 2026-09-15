@@ -20,6 +20,7 @@ const IPC = {
   marker: "recorder:marker",
   doctor: "doctor:check",
   copilotSignIn: "copilot:sign-in",
+  copilotSignInCancel: "copilot:sign-in-cancel",
   statusChanged: "recorder:status-changed",
   recordingPrivacyReviewed: "recorder:privacy-reviewed",
   recordingPrivacyWarningRequested: "recorder:privacy-warning-requested",
@@ -116,7 +117,8 @@ contextBridge.exposeInMainWorld("skillRecorder", {
   status: () => ipcRenderer.invoke(IPC.status),
   marker: (note) => ipcRenderer.invoke(IPC.marker, note),
   doctor: () => ipcRenderer.invoke(IPC.doctor),
-  copilotSignIn: () => ipcRenderer.invoke(IPC.copilotSignIn),
+  copilotSignIn: (attemptId) => ipcRenderer.invoke(IPC.copilotSignIn, attemptId),
+  cancelCopilotSignIn: (attemptId) => ipcRenderer.invoke(IPC.copilotSignInCancel, attemptId),
   onStatusChanged: (cb) => {
     const listener = (_event, status) => cb(status);
     ipcRenderer.on(IPC.statusChanged, listener);

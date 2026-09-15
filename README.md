@@ -79,7 +79,22 @@ This adds **Skill Recorder (Source)** shortcuts to your desktop and Start Menu.
 1. **Grant Screen Recording.** On first launch, macOS asks for Screen Recording permission;
    grant it and you're ready to record.
 2. **Record, Analyze, Create.** Do your task, then Analyze. The first time you Analyze,
-   Skill Recorder offers **Sign in to Copilot** if you aren't signed in yet.
+   Skill Recorder offers **Sign in to Copilot** if you aren't signed in yet. Finish
+   authorization in your browser; the app verifies sign-in and automatically retries
+   the interrupted analysis once. There is no login terminal window to close.
+   Canceling sign-in or leaving that analysis prevents the automatic retry.
+
+On Windows, a local Microsoft Entra tenant hint can offer a choice between
+**Microsoft Enterprise SSO** and a **Personal GitHub account**. This is only a
+routing hint, not proof of employment. The SSO choice opens the enterprise sign-in
+page first; finish SSO, return to Skill Recorder, and choose **Continue to Copilot**
+to authorize the CLI in the same browser profile. Without a hint, and on macOS/Linux,
+sign-in goes directly to the standard GitHub flow. No work-email prompt is required.
+
+Sign-in can be canceled and times out after five minutes. If browser login fails,
+the app shows an error and a manual command for the bundled CLI (use PowerShell on
+Windows). After manual sign-in, retry the analysis yourself. Signing in from a skill
+or automation builder does not automatically repeat a build or installation.
 
 To inspect the script before running it, set install options, update, or uninstall, see
 [`INSTALL.md`](INSTALL.md).
