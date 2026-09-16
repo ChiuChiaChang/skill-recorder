@@ -2,6 +2,12 @@
 
 **Record yourself doing a task once, then turn it into a skill your AI agent can repeat.**
 
+> [!TIP]
+> **Want to install Skill Recorder? [Go to the latest release](https://github.com/microsoft/skill-recorder/releases/latest).**
+> Scroll to **Commit-pinned installation** and copy the complete command for your
+> operating system. It is ready to paste: you do not need to edit it or download
+> the source code yourself. [Step-by-step instructions below](#install-it).
+
 Skill Recorder captures a real work session on your screen: the clicks, the app and
 window switches, the pages you visit, commands/output from its optional recorded terminal,
 and (if you want) your spoken narration. It then uses
@@ -47,32 +53,35 @@ macOS is the primary target. Windows 11 (x64 and ARM64) is supported too (see
 ### Install it
 
 Open the **[latest release](https://github.com/microsoft/skill-recorder/releases/latest)** and
-copy the command for your platform. Each release pins an exact commit, so the real command looks
-like the patterns below with `<40-character-release-commit>` filled in.
+follow these steps:
 
-**macOS / Ubuntu**
+1. On the release page, scroll to **Commit-pinned installation**. Find **Windows 11
+   x64 or ARM64** or **macOS or Ubuntu**, then copy the **entire command** in that
+   section using the copy button at the top-right of the code block.
+2. Open **PowerShell** from the Windows Start menu, or **Terminal** on macOS or
+   Ubuntu. Paste the command and press **Enter**.
+3. Keep that window open while installation completes. The installer downloads
+   what it needs, builds the app on your computer, creates shortcuts, and launches
+   Skill Recorder. The first installation can take several minutes.
 
-```bash
-commit="<40-character-release-commit>"; curl -fsSL "https://raw.githubusercontent.com/microsoft/skill-recorder/$commit/install.sh" | SKILL_RECORDER_COMMIT="$commit" bash
-```
+> [!IMPORTANT]
+> **Copy the command from the release page, not a template from the technical docs.**
+> The release command already contains the correct version identifier; there is
+> nothing to replace. Do not paste commands containing
+> `<40-character-release-commit>` literally.
+> You do **not** need Git, a separate Node.js installation, or the **Manual developer
+> setup** instructions. The **Source code (zip)** and **Source code (tar.gz)** links
+> under **Assets** are not app installers.
 
-The commit pins both the downloaded script and the source it builds. To keep the app running
-after the terminal closes, add `SKILL_RECORDER_DETACHED=1` after the pipe:
+To review the script before running it, follow the release page's
+**inspect-first instructions** instead. Installation remains subject to your
+organization's policies.
 
-```bash
-commit="<40-character-release-commit>"; curl -fsSL "https://raw.githubusercontent.com/microsoft/skill-recorder/$commit/install.sh" | SKILL_RECORDER_COMMIT="$commit" SKILL_RECORDER_DETACHED=1 bash
-```
-
-On macOS this adds a **Skill Recorder (Source)** app to `~/Applications` (relaunch from Spotlight,
-Launchpad, or the Dock). On Ubuntu it adds a matching application entry.
-
-**Windows (PowerShell)**
-
-```powershell
-$commit="<40-character-release-commit>"; $env:SKILL_RECORDER_COMMIT=$commit; irm "https://raw.githubusercontent.com/microsoft/skill-recorder/$commit/install.ps1" | iex
-```
-
-This adds **Skill Recorder (Source)** shortcuts to your desktop and Start Menu.
+**Open it again later:** use **Skill Recorder (Source)** on your Windows desktop or
+Start Menu; on macOS, find it in `~/Applications`, Spotlight, or Launchpad; on
+Ubuntu, use the matching application entry. You do not need to reinstall each time.
+Advanced options, including running in the background on macOS or Ubuntu, are in
+[`INSTALL.md`](INSTALL.md#commit-pinned-one-line-installation).
 
 ### Then record
 
@@ -153,6 +162,9 @@ The in-app "Records your screen and activity" panel spells out exactly what's co
 > or narrated during a session.
 
 ## Develop from source
+
+**For developers changing the code, not for installing the app.** To use Skill
+Recorder, follow [Install it](#install-it) instead.
 
 Requires **Node.js 24**. After checking out a release revision:
 
