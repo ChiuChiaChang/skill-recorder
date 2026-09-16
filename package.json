@@ -41,6 +41,7 @@
     "start": "node scripts/run-reviewed-electron.mjs start"
   },
   "dependencies": {
+    "@github/copilot": "1.0.78",
     "@github/copilot-sdk": "^1.0.6",
     "@huggingface/transformers": "^4.2.0",
     "@secretlint/core": "^13.0.4",
