@@ -3,7 +3,8 @@
 **Record yourself doing a task once, then turn it into a skill your AI agent can repeat.**
 
 Skill Recorder captures a real work session on your screen: the clicks, the app and
-window switches, the pages you visit, and (if you want) your spoken narration. It then uses
+window switches, the pages you visit, commands/output from its optional recorded terminal,
+and (if you want) your spoken narration. It then uses
 the **GitHub Copilot CLI** to reconstruct *what you actually did* as a clear **intent plus
 an ordered list of steps**. From there, one step turns that single run into something an
 agent can reuse:
@@ -25,9 +26,9 @@ form can teach the agent to submit *all* of them.
 
 1. 🔴 **Record.** Hit record (or `⌘⇧R` / `Ctrl+Shift+R` from anywhere) and just do your
    task. Skill Recorder captures your screen and activity locally, in the background.
-2. 🎛️ **Control.** While recording, a small always-on-top bar shows capture and
-   microphone state. Mute, unmute, or switch mics on the fly, then finish, or discard
-   (with a confirmation) if the take didn't go to plan.
+2. 🎛️ **Control.** While recording, a small always-on-top bar shows capture,
+   microphone, and recorded-terminal state. Open the session-scoped terminal, mute,
+   unmute, or switch mics, then finish or discard with confirmation.
 3. 🧠 **Analyze.** Click Analyze and GitHub Copilot reconstructs one overall intent and
    an ordered list of steps. Review and edit until it reads right.
 4. ✨ **Create.** From an approved analysis, generate a reusable **Skill** and/or a
@@ -78,7 +79,22 @@ This adds **Skill Recorder (Source)** shortcuts to your desktop and Start Menu.
 1. **Grant Screen Recording.** On first launch, macOS asks for Screen Recording permission;
    grant it and you're ready to record.
 2. **Record, Analyze, Create.** Do your task, then Analyze. The first time you Analyze,
-   Skill Recorder offers **Sign in to Copilot** if you aren't signed in yet.
+   Skill Recorder offers **Sign in to Copilot** if you aren't signed in yet. Finish
+   authorization in your browser; the app verifies sign-in and automatically retries
+   the interrupted analysis once. There is no login terminal window to close.
+   Canceling sign-in or leaving that analysis prevents the automatic retry.
+
+On Windows, a local Microsoft Entra tenant hint can offer a choice between
+**Microsoft Enterprise SSO** and a **Personal GitHub account**. This is only a
+routing hint, not proof of employment. The SSO choice opens the enterprise sign-in
+page first; finish SSO, return to Skill Recorder, and choose **Continue to Copilot**
+to authorize the CLI in the same browser profile. Without a hint, and on macOS/Linux,
+sign-in goes directly to the standard GitHub flow. No work-email prompt is required.
+
+Sign-in can be canceled and times out after five minutes. If browser login fails,
+the app shows an error and a manual command for the bundled CLI (use PowerShell on
+Windows). After manual sign-in, retry the analysis yourself. Signing in from a skill
+or automation builder does not automatically repeat a build or installation.
 
 To inspect the script before running it, set install options, update, or uninstall, see
 [`INSTALL.md`](INSTALL.md).
@@ -96,9 +112,11 @@ To inspect the script before running it, set install options, update, or uninsta
 
 Recording, storage, frame extraction, and optional narration transcription all happen
 **on your computer**; nothing leaves while you record. Only when you choose **Analyze**
-does Skill Recorder send the event timeline (window/document titles, URLs, and clipboard
-previews), extracted screen images, and narration text to GitHub's cloud for Copilot to
-process.
+does Skill Recorder send the event timeline (window/document titles, URLs, clipboard
+previews, and terminal commands), extracted screen images, narration text, and bounded
+terminal-output excerpts requested during analysis to GitHub's cloud for Copilot to process.
+When protection is enabled, terminal commands and the complete local terminal transcript
+participate in the same on-device secret/PII scan before any requested excerpt is returned.
 
 The in-app "Records your screen and activity" panel spells out exactly what's collected:
 
@@ -109,6 +127,11 @@ The in-app "Records your screen and activity" panel spells out exactly what's co
 - **Clipboard:** short previews of copied text that tie steps together.
 - **Narration** *(optional)*: spoken commentary, transcribed **on-device** in any of
   Whisper's 99 supported languages (a one-time ~252 MB model download on first use).
+- **Recorded terminal** *(only when opened from the floating recording bar)*: command,
+  cwd, shell, exit status, duration, and the complete terminal output. The transcript
+  has no app-imposed size cap and counts toward the saved session's storage. It captures
+  only the app-owned terminal for that recording—there are no global hooks, profile
+  edits, background command monitors, or observation of existing terminals.
 
 > ⚠️ **Please don't capture secrets.** Passwords, access tokens, API keys, credentials, and
 > other confidential information should never be recorded, typed, pasted, shown, copied,
@@ -137,6 +160,7 @@ The Copilot **describer** and **builders** have a fixture-based eval suite; see
 
 ```bash
 npm run eval            # score the describer against synthetic recordings
+npm run eval:terminal   # score indexed terminal-output use and redaction
 npm run eval:builder    # score the skill/automation generalization
 ```
 

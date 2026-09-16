@@ -11,6 +11,12 @@ import type {
   TargetPlacement,
 } from "./skill";
 import type { RecorderState } from "./types";
+import type {
+  SupportedShellId,
+  TerminalActionResult,
+  TerminalShellDescriptor,
+  TerminalStatus,
+} from "./terminal";
 
 export type {
   SensitiveCategory,
@@ -273,12 +279,16 @@ export interface StopResult {
   ok: boolean;
   sessionId?: string;
   sessionDir?: string;
+  requiresTerminalConfirmation?: boolean;
+  terminalCommand?: string;
   error?: string;
 }
 
 export interface DiscardResult {
   ok: boolean;
   sessionId?: string;
+  requiresTerminalConfirmation?: boolean;
+  terminalCommand?: string;
   error?: string;
 }
 
@@ -363,13 +373,16 @@ export interface CopilotInfo {
   path: string | null;
 }
 
-/** Result of asking the app to open a terminal on the bundled CLI's sign-in command. */
-export interface CopilotSignInResult {
-  ok: boolean;
-  /** The exact command the terminal was asked to run, so the user can run it themselves. */
-  command?: string;
-  error?: string;
-}
+/** Success means the bundled CLI completed login and a fresh SDK client verified it. */
+export type CopilotSignInResult =
+  | { ok: true; status: "authenticated" }
+  | {
+      ok: false;
+      status: "failed" | "canceled" | "timed-out";
+      /** Manual fallback; never includes credentials. */
+      command?: string;
+      error?: string;
+    };
 
 /**
  * Message every Copilot-backed feature throws when the CLI has no stored credentials.
@@ -439,6 +452,7 @@ export const IPC = {
   marker: "recorder:marker",
   doctor: "doctor:check",
   copilotSignIn: "copilot:sign-in",
+  copilotSignInCancel: "copilot:sign-in-cancel",
   statusChanged: "recorder:status-changed",
   recordingPrivacyReviewed: "recorder:privacy-reviewed",
   recordingPrivacyWarningRequested: "recorder:privacy-warning-requested",
@@ -472,6 +486,17 @@ export const IPC = {
   cancelAutomation: "automation:cancel",
   revealAutomation: "automation:reveal",
   automationProgress: "automation:progress",
+  terminalOpen: "terminal:open",
+  terminalReady: "terminal:ready",
+  terminalStatus: "terminal:status",
+  terminalShells: "terminal:shells",
+  terminalSwitchShell: "terminal:switch-shell",
+  terminalInput: "terminal:input",
+  terminalResize: "terminal:resize",
+  terminalHide: "terminal:hide",
+  terminalStatusChanged: "terminal:status-changed",
+  terminalFinishConfirmationRequested: "terminal:finish-confirmation-requested",
+  terminalOutput: "terminal:output",
   openLibrary: "ui:open-library",
   closeLibrary: "ui:close-library",
   recordingControlsExpanded: "ui:recording-controls-expanded",
@@ -486,8 +511,8 @@ export interface SkillRecorderApi {
   confirmStart(): Promise<StartResult>;
   markRecordingPrivacyReviewed(): Promise<void>;
   onRecordingPrivacyWarningRequested(cb: () => void): () => void;
-  stop(): Promise<StopResult>;
-  discard(): Promise<DiscardResult>;
+  stop(forceTerminal?: boolean): Promise<StopResult>;
+  discard(forceTerminal?: boolean): Promise<DiscardResult>;
   setMicrophoneEnabled(enabled: boolean): Promise<MicrophoneResult>;
   setNarrationLanguage(language: NarrationLanguage): Promise<NarrationLanguageResult>;
   microphoneSettings(): Promise<MicrophoneSettingsStatus>;
@@ -505,11 +530,23 @@ export interface SkillRecorderApi {
   marker(note: string): Promise<MarkerResult>;
   doctor(): Promise<DoctorReport>;
   /**
-   * Open a terminal window running the bundled Copilot CLI's `login` command, so the
-   * user can sign in without a globally installed `copilot`.
+   * Sign in through the browser using the bundled CLI and verify authentication.
+   * The attempt ID scopes cancellation to the requesting panel.
    */
-  copilotSignIn(): Promise<CopilotSignInResult>;
+  copilotSignIn(attemptId: string): Promise<CopilotSignInResult>;
+  cancelCopilotSignIn(attemptId: string): Promise<void>;
   onStatusChanged(cb: (status: RecorderStatus) => void): () => void;
+  openTerminal(): Promise<TerminalActionResult>;
+  terminalReady(): Promise<TerminalActionResult>;
+  terminalStatus(): Promise<TerminalStatus>;
+  terminalShells(): Promise<TerminalShellDescriptor[]>;
+  switchTerminalShell(shell: SupportedShellId): Promise<TerminalActionResult>;
+  writeTerminal(data: string): void;
+  resizeTerminal(columns: number, rows: number): void;
+  hideTerminal(): Promise<void>;
+  onTerminalStatusChanged(cb: (status: TerminalStatus) => void): () => void;
+  onTerminalFinishConfirmationRequested(cb: () => void): () => void;
+  onTerminalOutput(cb: (data: string) => void): () => void;
   narrationStatus(): Promise<NarrationStatus>;
   downloadNarrationModel(): Promise<NarrationActionResult>;
   transcribeNarration(sessionId: string): Promise<NarrationActionResult>;
