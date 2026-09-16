@@ -252,14 +252,40 @@ so that `replace-registry-host` maps the lockfile's canonical npmjs URLs onto th
 configured mirror. Machines with no npm configuration are unaffected and continue
 to use `registry.npmjs.org`.
 
-Configure a mirror once with:
+On Windows, this discovery does not require Node.js or npm to be installed.
+The installer preserves an explicit `NPM_CONFIG_GLOBALCONFIG`; otherwise it
+checks the system npm's reported global configuration, an explicit
+`NPM_CONFIG_PREFIX` (`etc\npmrc` beneath that prefix), or the standard locations:
+`%APPDATA%\npm\etc\npmrc`, then `nodejs\etc\npmrc` beneath the native, current,
+and x86 Program Files directories. This includes managed configuration placed
+in those locations before npm is available on PATH. Existing user `.npmrc`
+and npm environment settings retain npm's normal precedence. The installer
+does not modify these files.
+
+This reads locally available settings; it does not trigger an Intune/device-policy
+sync. On an unconfigured Windows machine, a public-registry network failure can
+trigger one Microsoft-specific recovery attempt if local device/account metadata
+provides a Microsoft Entra tenant hint. This is only a routing hint, not
+authorization. The installer announces the retry, applies the registry only to
+the retry process, and preserves lockfile integrity and script approvals. It
+never changes saved settings or weakens TLS verification. Explicit npm
+configuration, other organizations, and non-network failures do not trigger this
+fallback. If recovery is unavailable or fails, the installer stops with guidance
+for your organization's approved package-feed provisioning.
+
+If npm is already on PATH, configure a mirror once with:
 
 ```sh
 npm config set registry <url> --location=global
 ```
 
-The installers never pin or override the registry themselves; they only make the
-machine's existing npm configuration visible to the portable runtime. The
+If npm is not installed globally, the Windows installer's dependency-error
+message includes a command using the exact path to its downloaded npm. That
+command sets the approved registry in your user configuration; substitute the
+URL supplied by your organization and follow its feed-authentication instructions.
+
+The installers preserve existing npm configuration. The Windows recovery path
+above is limited to an otherwise unconfigured public-registry failure. The
 lockfile's integrity hashes are verified whichever registry serves the packages,
 so a mirror cannot substitute different content.
 
