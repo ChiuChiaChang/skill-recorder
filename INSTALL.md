@@ -1,5 +1,16 @@
 # Installing Skill Recorder from source
 
+> [!TIP]
+> **Just want to install and use the app? [Go to the latest release](https://github.com/microsoft/skill-recorder/releases/latest).**
+> Scroll to **Commit-pinned installation** and copy the complete command for your
+> operating system. Paste it into **PowerShell** on Windows or **Terminal** on
+> macOS or Ubuntu, then press **Enter**. No changes to the command are needed.
+> See the [step-by-step guide](README.md#install-it) for more help.
+
+This page is the **advanced installation reference**, including script inspection,
+configuration, and manual developer setup. The commands below are templates, not
+ready-to-run release commands.
+
 Skill Recorder can run directly from an exact source revision on Windows, macOS,
 or Ubuntu. These methods do not download a prebuilt Skill Recorder application.
 Node.js, Electron, native dependencies, and the GitHub Copilot CLI are obtained
@@ -14,7 +25,10 @@ compliance bundle.
 ## Commit-pinned one-line installation
 
 Replace `<40-character-release-commit>` with the full 40-character commit SHA
-published for the release.
+published for the release. Do not run a command with that placeholder still in it:
+it is not a real version and the download will fail. For a command with the correct
+value already filled in, use the
+[latest release](https://github.com/microsoft/skill-recorder/releases/latest).
 
 ### Windows 11 x64 or ARM64
 
@@ -163,6 +177,14 @@ Each entry runs the current launcher, so it always starts the most recently
 installed revision.
 
 ## Manual developer setup
+
+> [!IMPORTANT]
+> **This section is for developers who want to work on the code. It is not required
+> to install or use Skill Recorder.** Use the ready-to-run command on the
+> [release page](https://github.com/microsoft/skill-recorder/releases/latest) instead.
+> If you continue below, replace `<40-character-release-commit>` with the release's
+> actual full commit SHA before running any commands. Pasting the placeholder
+> literally causes a **404 Not Found** error and the remaining steps cannot work.
 
 Install Node.js 24.19 or newer within the Node.js 24 release line from its
 official publisher. This supplies npm 11.17 or newer, which is required to
