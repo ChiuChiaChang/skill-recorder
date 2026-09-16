@@ -16,7 +16,7 @@ function fixture(overrides: Partial<SignInOperations> = {}) {
     prepareEnterprise: async () => { calls.push("enterprise"); return true; },
     login: async () => { calls.push("login"); },
     verifyAuthentication: async () => { calls.push("verify"); return true; },
-    manualCommand: "copilot login --web-flow",
+    manualCommand: "copilot --no-auto-update login --web-flow",
     ...overrides,
   };
   return { calls, operations };
@@ -36,8 +36,21 @@ test("unknown user sees no enterprise choice and succeeds only after verificatio
 });
 
 test("positive hint offers choice, with enterprise SSO before CLI authorization", async () => {
-  const { calls, operations } = fixture({ hasMicrosoftHint: async () => true });
-  assert.equal((await new SignInCoordinator().signIn("attempt", 1, operations)).ok, true);
+  const entered = deferred<void>();
+  const sso = deferred<boolean>();
+  const { calls, operations } = fixture({
+    hasMicrosoftHint: async () => true,
+    prepareEnterprise: () => {
+      calls.push("enterprise");
+      entered.resolve();
+      return sso.promise;
+    },
+  });
+  const result = new SignInCoordinator().signIn("attempt", 1, operations);
+  await entered.promise;
+  assert.deepEqual(calls, ["choose", "enterprise"]);
+  sso.resolve(true);
+  assert.equal((await result).ok, true);
   assert.deepEqual(calls, ["choose", "enterprise", "login", "verify"]);
 });
 

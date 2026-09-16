@@ -86,10 +86,25 @@ This adds **Skill Recorder (Source)** shortcuts to your desktop and Start Menu.
 
 On Windows, a local Microsoft Entra tenant hint can offer a choice between
 **Microsoft Enterprise SSO** and a **Personal GitHub account**. This is only a
-routing hint, not proof of employment. The SSO choice opens the enterprise sign-in
-page first; finish SSO, return to Skill Recorder, and choose **Continue to Copilot**
-to authorize the CLI in the same browser profile. Without a hint, and on macOS/Linux,
+routing hint, not proof of employment. Microsoft sign-in has two separate steps:
+finish SSO in the browser, then authorize the GitHub Copilot app. When SSO lands on
+`github.com/enterprises/microsoft`, close that tab, return to Skill Recorder, and
+choose **Authorize Copilot**. SSO alone does not authorize the app. Use the same
+browser profile and Microsoft-linked GitHub account for both steps.
+Without a hint, and on macOS/Linux,
 sign-in goes directly to the standard GitHub flow. No work-email prompt is required.
+
+The authorization step opens the default browser using the CLI's web OAuth flow,
+not a device code. Keeping the same browser profile lets GitHub reuse the session
+from SSO, so you can approve the GitHub Copilot app without entering a code.
+If GitHub asks you to sign in again, check that you are using the same browser profile.
+After authorization, close that tab and return to Skill Recorder; the app verifies
+access before continuing.
+
+Skill Recorder pins Copilot CLI 1.0.78, which supports web OAuth without a terminal,
+and runs `--no-auto-update login --web-flow` so sign-in does not depend on a
+different CLI version in the user's auto-update cache. Older bundled versions
+such as 1.0.71 do not support `--web-flow`.
 
 Sign-in can be canceled and times out after five minutes. If browser login fails,
 the app shows an error and a manual command for the bundled CLI (use PowerShell on
