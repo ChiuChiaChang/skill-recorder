@@ -1,6 +1,7 @@
 import { CopilotClient, type CopilotSession } from "@github/copilot-sdk";
 
 import { COPILOT_SIGNED_OUT_ERROR } from "../../common/ipc";
+import { aiSettingsSignature, loadAiSettings } from "../ai-settings";
 import { copilotConnectionOption, withStartupTimeout } from "../copilot-cli-path";
 import { createLogger } from "../logger";
 
@@ -23,6 +24,7 @@ const MAX_LIVE_SESSIONS = 4;
 export abstract class AgentBuilder<TLive extends BaseLive> {
   private client: CopilotClient | null = null;
   private clientStart: Promise<CopilotClient> | null = null;
+  private clientSignature: string | null = null;
   protected model: string | undefined;
   protected readonly live = new Map<string, TLive>();
   protected readonly active = new Set<string>();
@@ -59,23 +61,42 @@ export abstract class AgentBuilder<TLive extends BaseLive> {
     if (this.client) await this.client.stop().catch(() => undefined);
     this.client = null;
     this.clientStart = null;
+    this.clientSignature = null;
+    this.model = undefined;
   }
 
-  /** Start (once) and return the shared Copilot client, verifying it's signed in. */
+  /** Start (once) and return the shared agent client. BYOK vLLM skips GitHub auth. */
   protected async ensureClient(): Promise<CopilotClient> {
+    const settings = loadAiSettings();
+    const signature = aiSettingsSignature(settings);
+    if (this.client && this.clientSignature !== signature) {
+      await this.dispose();
+    }
     if (this.client) return this.client;
     if (this.clientStart) return this.clientStart;
     this.clientStart = (async () => {
       const client = new CopilotClient(copilotConnectionOption());
       await withStartupTimeout(client.start(), `Copilot CLI (${this.name})`);
-      const auth = await client.getAuthStatus();
-      if (!auth.isAuthenticated) {
-        await client.stop().catch(() => undefined);
-        throw new Error(COPILOT_SIGNED_OUT_ERROR);
+
+      if (settings.provider === "copilot") {
+        const auth = await client.getAuthStatus();
+        if (!auth.isAuthenticated) {
+          await client.stop().catch(() => undefined);
+          throw new Error(COPILOT_SIGNED_OUT_ERROR);
+        }
+        this.model = process.env.SKILL_RECORDER_MODEL || undefined;
+        this.log.info("Copilot ready", auth.login ? `as ${auth.login}` : "");
+      } else {
+        if (!settings.vllmModel) {
+          await client.stop().catch(() => undefined);
+          throw new Error("No vLLM model is selected. Open Settings and select a model.");
+        }
+        this.model = settings.vllmModel;
+        this.log.info("vLLM provider ready", settings.vllmBaseUrl, `· model ${this.model}`);
       }
-      this.model = process.env.SKILL_RECORDER_MODEL || undefined;
-      this.log.info("Copilot ready", auth.login ? `as ${auth.login}` : "");
+
       this.client = client;
+      this.clientSignature = signature;
       return client;
     })();
     try {
