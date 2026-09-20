@@ -3,6 +3,7 @@ import type { UiLanguage } from "../common/ai-settings";
 let activeLanguage: UiLanguage = "en";
 let observer: MutationObserver | null = null;
 const originalText = new WeakMap<Text, string>();
+const renderedText = new WeakMap<Text, string>();
 
 const ZH_TW: Record<string, string> = {
   "Narrate": "語音旁白",
@@ -306,32 +307,47 @@ function translateTextNode(node: Text): void {
   if (shouldSkip(node)) return;
   const current = node.data;
   if (!current.trim()) return;
+
   const known = originalText.get(node);
+  const lastRendered = renderedText.get(node);
   let source = known;
-  if (!source || (current !== source && current !== translateExact(source))) {
+
+  // React can reuse the same Text node and replace its English source content.
+  // Treat a value different from our last rendered value as new application text.
+  // During a language switch current === lastRendered, so the original English
+  // source is preserved and switching zh-TW -> English works correctly.
+  if (!source || (lastRendered !== undefined && current !== lastRendered)) {
     source = current;
     originalText.set(node, source);
   }
+
   const leading = source.match(/^\s*/)?.[0] ?? "";
   const trailing = source.match(/\s*$/)?.[0] ?? "";
   const core = source.slice(leading.length, source.length - trailing.length);
   const translated = translateExact(core);
   const next = leading + translated + trailing;
   if (node.data !== next) node.data = next;
+  renderedText.set(node, next);
 }
 
 function translateAttributes(el: Element): void {
   for (const attr of ["title", "aria-label", "placeholder"]) {
     const value = el.getAttribute(attr);
     if (!value) continue;
-    const key = `data-sr-original-${attr.replace("aria-", "aria")}`;
-    let source = el.getAttribute(key);
-    if (!source || (value !== source && value !== translateExact(source))) {
+    const suffix = attr.replace("aria-", "aria");
+    const sourceKey = `data-sr-original-${suffix}`;
+    const renderedKey = `data-sr-rendered-${suffix}`;
+    let source = el.getAttribute(sourceKey);
+    const lastRendered = el.getAttribute(renderedKey);
+
+    if (!source || (lastRendered !== null && value !== lastRendered)) {
       source = value;
-      el.setAttribute(key, source);
+      el.setAttribute(sourceKey, source);
     }
+
     const translated = translateExact(source);
     if (value !== translated) el.setAttribute(attr, translated);
+    el.setAttribute(renderedKey, translated);
   }
 }
 
