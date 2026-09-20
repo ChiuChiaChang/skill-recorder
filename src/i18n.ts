@@ -133,6 +133,7 @@ function shouldSkip(text: Text): boolean {
 function translateTextNode(node: Text): void {
   if (shouldSkip(node)) return;
   const current = node.data;
+  if (!current.trim()) return;
   const known = originalText.get(node);
   let source = known;
   if (!source || (current !== source && current !== translateExact(source))) {
