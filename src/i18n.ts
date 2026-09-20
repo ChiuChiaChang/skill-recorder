@@ -237,6 +237,14 @@ function translateExact(value: string): string {
   if (match) return `${match[1]} 個步驟`;
   match = value.match(/^(\d+) events captured$/);
   if (match) return `已擷取 ${match[1]} 個事件`;
+  match = value.match(/^Ready to capture · (.+)$/);
+  if (match) return `準備錄製 · ${match[1]}`;
+  match = value.match(/^(Ctrl\+Shift\+R|⌘⇧R) toggles from anywhere$/);
+  if (match) return `${match[1]} 可在任何視窗切換錄製`;
+  match = value.match(/^Review sessions, (\d+) ready to analyze$/);
+  if (match) return `檢視工作階段，${match[1]} 筆可進行分析`;
+  match = value.match(/^Review sessions, (\d+) recorded$/);
+  if (match) return `檢視工作階段，共 ${match[1]} 筆錄製`;
   match = value.match(/^Analysis ready \(revision (\d+)\)\.$/);
   if (match) return `分析完成（修訂版 ${match[1]}）`;
   return value;
