@@ -1,3 +1,4 @@
+import type { AiModelListInput, AiModelListResult, AiSettings, AiSettingsResult } from "./ai-settings";
 import type { Analysis, AnalysisFeedback, AnalysisStep, Confidence } from "./analysis";
 import type { AutomationPlan, BuiltAutomation } from "./automation";
 import type { MicrophoneDevice } from "./microphone";
@@ -451,6 +452,9 @@ export const IPC = {
   status: "recorder:status",
   marker: "recorder:marker",
   doctor: "doctor:check",
+  aiSettingsGet: "ai:settings:get",
+  aiSettingsSave: "ai:settings:save",
+  aiModelsList: "ai:models:list",
   copilotSignIn: "copilot:sign-in",
   copilotSignInCancel: "copilot:sign-in-cancel",
   statusChanged: "recorder:status-changed",
@@ -529,6 +533,12 @@ export interface SkillRecorderApi {
   status(): Promise<RecorderStatus>;
   marker(note: string): Promise<MarkerResult>;
   doctor(): Promise<DoctorReport>;
+  /** Read the persisted AI provider and language settings. */
+  getAiSettings(): Promise<AiSettings>;
+  /** Save AI provider/language settings. vLLM requires a selected model. */
+  saveAiSettings(settings: AiSettings): Promise<AiSettingsResult>;
+  /** Discover model ids from an OpenAI-compatible /v1/models endpoint. */
+  listAiModels(input: AiModelListInput): Promise<AiModelListResult>;
   /**
    * Sign in through the browser using the bundled CLI and verify authentication.
    * The attempt ID scopes cancellation to the requesting panel.
