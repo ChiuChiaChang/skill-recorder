@@ -1,4 +1,5 @@
 import { app } from "electron";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
@@ -50,7 +51,7 @@ export function loadAiSettings(): AiSettings {
 export function saveAiSettings(input: Partial<AiSettings>): AiSettings {
   const next = sanitize(input);
   if (next.provider === "vllm") {
-    normalizeVllmBaseUrl(next.vllmBaseUrl);
+    next.vllmBaseUrl = normalizeVllmBaseUrl(next.vllmBaseUrl);
     if (!next.vllmModel) throw new Error("Select a vLLM model before saving.");
   }
   writeFileSync(settingsPath(), JSON.stringify(next, null, 2) + "\n", "utf8");
@@ -137,11 +138,14 @@ export async function listVllmModels(input: AiModelListInput): Promise<AiModelLi
 }
 
 export function aiSettingsSignature(settings = loadAiSettings()): string {
+  const keyFingerprint = settings.vllmApiKey
+    ? createHash("sha256").update(settings.vllmApiKey).digest("hex").slice(0, 16)
+    : "no-key";
   return [
     settings.provider,
     settings.vllmBaseUrl,
     settings.vllmModel,
-    settings.vllmApiKey ? "key" : "no-key",
+    keyFingerprint,
     settings.outputLanguage,
   ].join("|");
 }
