@@ -380,9 +380,17 @@ export function installDomTranslator(): void {
     for (const mutation of mutations) {
       if (mutation.type === "characterData" && mutation.target instanceof Text) {
         translateTextNode(mutation.target);
+      } else if (mutation.type === "attributes" && mutation.target instanceof Element) {
+        translateAttributes(mutation.target);
       }
       for (const node of mutation.addedNodes) translateSubtree(node);
     }
   });
-  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ["title", "aria-label", "placeholder"],
+  });
 }
