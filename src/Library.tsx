@@ -911,11 +911,12 @@ function AnalysisWorkspace({
               Analyze recording
             </button>
             <details className="analyze-disclosure">
-              <summary>What gets sent to GitHub Copilot</summary>
+              <summary>What gets sent to your AI provider</summary>
               <p>
                 When you choose Analyze, the event timeline (window and document titles, URLs, and
                 clipboard previews), plus screen images, narration text, and other content you
-                provide, are sent to GitHub&apos;s cloud service for processing by GitHub Copilot.{" "}
+                provide, are sent to the AI provider configured in Settings. GitHub Copilot uses
+                GitHub&apos;s service; vLLM sends requests to the OpenAI-compatible server URL you configured.{" "}
                 <span className="cloud-analysis-caution">
                   Do not analyze a recording that may contain passwords, access tokens, API keys,
                   credentials, secrets, or other sensitive or confidential information.
