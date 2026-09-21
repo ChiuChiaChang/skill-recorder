@@ -151,29 +151,118 @@ npm run build
 npm run dev
 ```
 
-### vLLM 設定方式
+### 如何切換 AI 引擎與 AI Model
 
-程式啟動後：
+程式預設介面為 **繁體中文（台灣）**。要切換 AI 引擎或使用自己的 vLLM Model，請先進入：
 
 ```text
-Review Sessions
+主畫面
    ↓
-Settings / 設定
+檢視錄製工作階段
    ↓
-AI Provider
+左上角「⚙ 設定」
    ↓
-vLLM / OpenAI-Compatible
+AI 設定
 ```
 
-接著：
+在 **AI 設定** 畫面會看到三個主要選項：
 
-1. 輸入 vLLM Server URL。
-2. 等待程式自動讀取 `/v1/models`。
-3. 從 Model 下拉選單選擇模型。
-4. UI Language 選擇 **繁體中文（台灣）**。
-5. AI Output Language 選擇 **繁體中文（台灣）**。
-6. 按 **儲存**。
-7. 開始錄製並進行 Analyze。
+| 設定 | 說明 |
+| --- | --- |
+| **AI 提供者** | 選擇 GitHub Copilot 或 vLLM / OpenAI 相容伺服器 |
+| **介面語言** | 預設為繁體中文（台灣），也可切換 English |
+| **AI 輸出語言** | 預設為繁體中文（台灣），控制 Analysis / Skill / Automation 的 AI 回覆語言 |
+
+#### 使用 GitHub Copilot
+
+在 **AI 提供者** 選擇：
+
+```text
+使用 GitHub Copilot
+```
+
+這個模式不需要設定 vLLM URL。程式會使用 GitHub Copilot 可用的模型與原本的 Copilot 登入流程。
+
+> [!NOTE]
+> 目前這個設定頁主要提供 **AI Provider 切換**。如果要由使用者自己指定並切換 AI Model，請使用下面的 **vLLM / OpenAI 相容伺服器** 模式。
+
+#### 使用自己的 vLLM / OpenAI-Compatible Model
+
+在 **AI 提供者** 選擇：
+
+```text
+使用 vLLM / OpenAI 相容伺服器
+```
+
+選擇後會顯示 vLLM 相關設定，包括：
+
+```text
+vLLM Server URL
+API Key（選用）
+Model
+```
+
+例如 Server URL：
+
+```text
+http://127.0.0.1:8000
+```
+
+或：
+
+```text
+http://127.0.0.1:8000/v1
+```
+
+程式會自動呼叫：
+
+```http
+GET /v1/models
+```
+
+並把伺服器目前提供的 Model 自動載入 **Model 下拉選單**。
+
+例如：
+
+```text
+AI 提供者
+└─ 使用 vLLM / OpenAI 相容伺服器
+
+vLLM Server URL
+└─ http://192.168.1.100:8000/v1
+
+Model
+├─ Qwen3-VL-32B-Instruct
+├─ Qwen3-30B-A3B-Instruct
+└─ ...
+```
+
+操作步驟：
+
+1. 將 **AI 提供者** 改成 **使用 vLLM / OpenAI 相容伺服器**。
+2. 輸入 vLLM Server URL。
+3. 程式會自動讀取 `/v1/models`。
+4. 從 **Model** 下拉選單選擇要使用的 AI Model。
+5. 如果 Server 有驗證，再輸入 API Key；本機未啟用驗證的 vLLM 通常可以留空。
+6. **介面語言** 選擇 **繁體中文（台灣）**。
+7. **AI 輸出語言** 選擇 **繁體中文（台灣）**。
+8. 按 **儲存**。
+9. 回到主畫面開始錄製，之後進入工作階段執行 **Analyze / 分析**。
+
+成功儲存後，主畫面下方的 **AI 引擎** 狀態會顯示目前使用的 Provider，例如：
+
+```text
+AI 引擎    Copilot · 已找到
+```
+
+或：
+
+```text
+AI 引擎    vLLM · Qwen3-VL-32B-Instruct
+```
+
+> [!IMPORTANT]
+> vLLM Model 建議支援 **Streaming** 與 **Tool / Function Calling**。如果希望 AI 同時分析錄製畫面的 Frame，建議使用支援 **Vision** 的 Model。
 
 ### 隱私與資料傳送
 
