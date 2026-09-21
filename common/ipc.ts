@@ -19,6 +19,8 @@ import type {
   TerminalStatus,
 } from "./terminal";
 
+export type { AiModelListInput, AiModelListResult, AiSettings, AiSettingsResult } from "./ai-settings";
+
 export type {
   SensitiveCategory,
   SensitiveFinding,
