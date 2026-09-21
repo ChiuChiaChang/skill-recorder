@@ -14,7 +14,7 @@ const appRoot = createRoot(root);
 
 async function bootstrap(): Promise<void> {
   const settings = await window.skillRecorder.getAiSettings().catch(() => null);
-  setUiLanguage(settings?.uiLanguage ?? "en");
+  setUiLanguage(settings?.uiLanguage ?? "zh-TW");
 
   const route = window.location.hash.replace("#", "");
   const isLibrary = route === "library";
