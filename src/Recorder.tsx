@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
+import type { AiSettings } from "../common/ai-settings";
 import type {
   DoctorReport,
   MicrophoneSettingsStatus,
@@ -48,6 +49,7 @@ function measureHudHeight(hud: HTMLElement): number {
 export function Recorder() {
   const [status, setStatus] = useState<RecorderStatus | null>(null);
   const [doctor, setDoctor] = useState<DoctorReport | null>(null);
+  const [aiSettings, setAiSettings] = useState<AiSettings | null>(null);
   const [narrationStatus, setNarrationStatus] = useState<NarrationStatus | null>(null);
   const [microphoneSettings, setMicrophoneSettings] =
     useState<MicrophoneSettingsStatus | null>(null);
@@ -86,6 +88,7 @@ export function Recorder() {
   useEffect(() => {
     void window.skillRecorder.status().then(applyRecorderStatus);
     void window.skillRecorder.doctor().then(setDoctor);
+    void window.skillRecorder.getAiSettings().then(setAiSettings);
     void window.skillRecorder.narrationStatus().then(setNarrationStatus);
     void window.skillRecorder.microphoneSettings().then(setMicrophoneSettings);
     void window.skillRecorder.screenSettings().then(setScreenSettings);
@@ -117,7 +120,10 @@ export function Recorder() {
   // The analyze step happens in the library window, so re-check how many
   // recordings still need analysis whenever the recorder regains focus.
   useEffect(() => {
-    const onFocus = () => void refreshCount();
+    const onFocus = () => {
+      void refreshCount();
+      void window.skillRecorder.getAiSettings().then(setAiSettings);
+    };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [refreshCount]);
@@ -688,9 +694,22 @@ export function Recorder() {
       {doctor && (
         <div className="doctor">
           <Row
-            label="GitHub Copilot"
-            status={doctor.copilotCli.ok ? "good" : "bad"}
-            note={doctor.copilotCli.ok ? "found" : "missing"}
+            label="AI engine"
+            status={
+              doctor.copilotCli.ok &&
+              (aiSettings?.provider !== "vllm" || Boolean(aiSettings.vllmModel))
+                ? "good"
+                : "bad"
+            }
+            note={
+              aiSettings?.provider === "vllm"
+                ? aiSettings.vllmModel
+                  ? `vLLM · ${aiSettings.vllmModel}`
+                  : "vLLM · select model"
+                : doctor.copilotCli.ok
+                  ? "Copilot · found"
+                  : "Copilot · missing"
+            }
           />
           {narrate && narrationStatus && (
             <VoiceModelRow

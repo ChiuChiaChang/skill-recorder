@@ -18,6 +18,7 @@ import {
 } from "../../common/skill";
 import { unresolvedTokens } from "../../common/values";
 import type { SkillBuildInput, SkillBuildProgress } from "../../common/ipc";
+import { aiOutputLanguageInstruction, aiProviderSessionOptions, loadAiSettings } from "../ai-settings";
 import { requireCatalogue } from "../architectures/catalogue-registry";
 import { AgentBuilder, type BaseLive } from "../builders/agent-builder";
 import { createReadTools } from "../builders/read-tools";
@@ -228,7 +229,8 @@ export class SkillBuilder extends AgentBuilder<LiveBuild> {
     ];
 
     const catalogue = requireCatalogue(architecture, "skill").content;
-    const systemContent = `${SKILL_BUILDER_INSTRUCTIONS}\n\n${catalogue}`.trim();
+    const settings = loadAiSettings();
+    const systemContent = `${SKILL_BUILDER_INSTRUCTIONS}\n\n${catalogue}\n\n${aiOutputLanguageInstruction(settings)}`.trim();
 
     const client = await this.ensureClient();
     const copilot = await client.createSession({
@@ -240,6 +242,7 @@ export class SkillBuilder extends AgentBuilder<LiveBuild> {
       infiniteSessions: { enabled: false },
       availableTools: tools.map((t) => t.name),
       ...(this.model ? { model: this.model } : {}),
+      ...aiProviderSessionOptions(settings),
     });
 
     const live: LiveBuild = {

@@ -174,7 +174,8 @@ export function WhatsRecorded({
               When you choose Analyze, the event timeline (window and document titles, URLs, and
               clipboard previews and recorded-terminal commands), plus screen images, narration
               text, and only the bounded terminal-output excerpts needed for analysis, are sent
-              to GitHub&apos;s cloud service and processed by GitHub Copilot.
+              to the AI provider configured in Settings. GitHub Copilot uses GitHub&apos;s service;
+              vLLM sends requests only to the OpenAI-compatible server URL you configured.
             </li>
             <li>
               By default, before anything is sent, this computer hides sensitive details like

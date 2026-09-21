@@ -11,6 +11,12 @@ import {
   type AnalysisSubmission,
 } from "../../common/analysis";
 import { COPILOT_SIGNED_OUT_ERROR, type AnalyzeProgress } from "../../common/ipc";
+import {
+  aiOutputLanguageInstruction,
+  aiProviderSessionOptions,
+  aiSettingsSignature,
+  loadAiSettings,
+} from "../ai-settings";
 import type { SessionMeta } from "../../common/types";
 import { FrameExtractor } from "../frames/extractor";
 import { createLogger } from "../logger";
@@ -86,6 +92,7 @@ export function loadPersistedAnalysis(sessionId: string): Analysis | null {
 export class Describer {
   private client: CopilotClient | null = null;
   private clientStart: Promise<CopilotClient> | null = null;
+  private clientSignature: string | null = null;
   private model: string | undefined;
   private readonly live = new Map<string, LiveSession>();
   private readonly active = new Set<string>();
@@ -183,6 +190,8 @@ export class Describer {
     if (this.client) await this.client.stop().catch(() => undefined);
     this.client = null;
     this.clientStart = null;
+    this.clientSignature = null;
+    this.model = undefined;
   }
 
   // --- internals -----------------------------------------------------------
@@ -192,6 +201,11 @@ export class Describer {
   }
 
   private async ensureClient(): Promise<CopilotClient> {
+    const settings = loadAiSettings();
+    const signature = aiSettingsSignature(settings);
+    if (this.client && this.clientSignature !== signature) {
+      await this.dispose();
+    }
     if (this.client) return this.client;
     if (this.clientStart) return this.clientStart;
     this.clientStart = (async () => {
@@ -199,14 +213,30 @@ export class Describer {
       if (connOpts) log.info("CLI path resolved from node_modules");
       const client = new CopilotClient(connOpts);
       await withStartupTimeout(client.start(), "Copilot CLI (Describer)");
-      const auth = await client.getAuthStatus();
-      if (!auth.isAuthenticated) {
-        await client.stop().catch(() => undefined);
-        throw new Error(COPILOT_SIGNED_OUT_ERROR);
+
+      if (settings.provider === "copilot") {
+        const auth = await client.getAuthStatus();
+        if (!auth.isAuthenticated) {
+          await client.stop().catch(() => undefined);
+          throw new Error(COPILOT_SIGNED_OUT_ERROR);
+        }
+        this.model = await this.pickVisionModel(client);
+        log.info(
+          "Copilot ready",
+          auth.login ? `as ${auth.login}` : "",
+          this.model ? `· model ${this.model}` : "",
+        );
+      } else {
+        if (!settings.vllmModel) {
+          await client.stop().catch(() => undefined);
+          throw new Error("No vLLM model is selected. Open Settings and select a model.");
+        }
+        this.model = settings.vllmModel;
+        log.info("vLLM provider ready", settings.vllmBaseUrl, `· model ${this.model}`);
       }
-      this.model = await this.pickVisionModel(client);
-      log.info("Copilot ready", auth.login ? `as ${auth.login}` : "", this.model ? `· model ${this.model}` : "");
+
       this.client = client;
+      this.clientSignature = signature;
       return client;
     })();
     try {
@@ -254,14 +284,17 @@ export class Describer {
     });
 
     const client = await this.ensureClient();
+    const settings = loadAiSettings();
+    const systemContent = `${DESCRIBER_INSTRUCTIONS}\n\n${aiOutputLanguageInstruction(settings)}`.trim();
     const config = {
-      systemMessage: { mode: "append" as const, content: DESCRIBER_INSTRUCTIONS },
+      systemMessage: { mode: "append" as const, content: systemContent },
       tools,
       onPermissionRequest: approveAll,
       workingDirectory: dir,
       enableHostGitOperations: false,
       infiniteSessions: { enabled: false },
       ...(this.model ? { model: this.model } : {}),
+      ...aiProviderSessionOptions(settings),
     };
     // Always constrain the agent to our sandboxed custom tools. If the runtime
     // cannot honor the allowlist we fail the analysis rather than silently

@@ -41,12 +41,14 @@ import { formatBytes, formatDur, formatWhen, shortLabel } from "./format";
 import { skillPlacementModel, skillTargetFor } from "./skill-placement";
 import { SensitiveReview } from "./SensitiveReview";
 import { AnalysisRecovery, completeSignIn, type AnalysisRun } from "./analysis-recovery";
+import { AiSettingsPanel } from "./AiSettings";
 
 export function Library() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const [narrationStatus, setNarrationStatus] = useState<NarrationStatus | null>(null);
 
   const loadSessions = useCallback(async () => {
@@ -98,6 +100,14 @@ export function Library() {
         <div className="lib-list-head">
           <span className="eyebrow">Sessions</span>
           <span className="pill">{sessions.length}</span>
+          <button
+            className={`lib-settings-btn ${showSettings ? "on" : ""}`}
+            title="Settings"
+            onClick={() => setShowSettings((open) => !open)}
+          >
+            <span aria-hidden>⚙</span>
+            <span>Settings</span>
+          </button>
         </div>
         {notice && (
           <button className="sess-notice" onClick={() => setNotice(null)} title="Dismiss">
@@ -109,13 +119,18 @@ export function Library() {
             sessions={sessions}
             loaded={loaded}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={(id) => {
+              setShowSettings(false);
+              setSelectedId(id);
+            }}
             onDelete={deleteSession}
           />
         </div>
       </aside>
       <main className="lib-detail">
-        {selected ? (
+        {showSettings ? (
+          <AiSettingsPanel onClose={() => setShowSettings(false)} />
+        ) : selected ? (
           <AnalysisWorkspace
             key={selected.id}
             summary={selected}
@@ -896,11 +911,12 @@ function AnalysisWorkspace({
               Analyze recording
             </button>
             <details className="analyze-disclosure">
-              <summary>What gets sent to GitHub Copilot</summary>
+              <summary>What gets sent to your AI provider</summary>
               <p>
                 When you choose Analyze, the event timeline (window and document titles, URLs, and
                 clipboard previews), plus screen images, narration text, and other content you
-                provide, are sent to GitHub&apos;s cloud service for processing by GitHub Copilot.{" "}
+                provide, are sent to the AI provider configured in Settings. GitHub Copilot uses
+                GitHub&apos;s service; vLLM sends requests to the OpenAI-compatible server URL you configured.{" "}
                 <span className="cloud-analysis-caution">
                   Do not analyze a recording that may contain passwords, access tokens, API keys,
                   credentials, secrets, or other sensitive or confidential information.

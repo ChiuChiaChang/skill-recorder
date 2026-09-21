@@ -12,6 +12,10 @@ import os from "node:os";
 import path from "node:path";
 
 import type {
+  AiModelListInput,
+  AiModelListResult,
+  AiSettings,
+  AiSettingsResult,
   AnalysisEditInput,
   AnalysisFeedbackInput,
   AnalyzeResult,
@@ -32,6 +36,7 @@ import type { AutomationPlan } from "../common/automation";
 import type { NarrationLanguage } from "../common/narration";
 import type { SensitiveReport } from "../common/sensitive";
 import type { SkillPlan } from "../common/skill";
+import { loadAiSettings, listVllmModels, saveAiSettings } from "./ai-settings";
 import { AutomationBuilder, loadPersistedAutomation } from "./automationbuilder/builder";
 import { cancelCopilotSignIn, disposeCopilotSignIn, openCopilotSignIn } from "./copilot-signin";
 import { buildDebugInfo, writeDebugBundle } from "./debug-bundle";
@@ -164,6 +169,24 @@ export function registerIpc(
   ipcMain.handle(IPC.status, () => recorder.status());
   ipcMain.handle(IPC.marker, (_event, note: string) => recorder.marker(note));
   ipcMain.handle(IPC.doctor, () => runDoctor());
+  ipcMain.handle(IPC.aiSettingsGet, () => loadAiSettings());
+  ipcMain.handle(
+    IPC.aiModelsList,
+    (_event, input: AiModelListInput): Promise<AiModelListResult> => listVllmModels(input),
+  );
+  ipcMain.handle(
+    IPC.aiSettingsSave,
+    (_event, input: AiSettings): AiSettingsResult => {
+      try {
+        return { ok: true, settings: saveAiSettings(input) };
+      } catch (err) {
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    },
+  );
   app.once("before-quit", disposeCopilotSignIn);
   ipcMain.handle(IPC.copilotSignIn, async (event, attemptId: unknown) => {
     if (typeof attemptId !== "string" || !/^[a-zA-Z0-9-]{1,64}$/.test(attemptId)) {

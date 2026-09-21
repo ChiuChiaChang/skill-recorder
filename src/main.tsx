@@ -5,33 +5,44 @@ import { Library } from "./Library";
 import { Recorder } from "./Recorder";
 import { RecordingControls } from "./RecordingControls";
 import { Terminal } from "./Terminal";
+import { installDomTranslator, setUiLanguage } from "./i18n";
 import "./App.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing #root");
+const appRoot = createRoot(root);
 
-const route = window.location.hash.replace("#", "");
-const isLibrary = route === "library";
-const isRecordingControls = route === "recording-controls";
-const isTerminal = route === "terminal";
-document.body.dataset.route = isLibrary
-  ? "library"
-  : isRecordingControls
-    ? "recording-controls"
-    : isTerminal
-      ? "terminal"
-    : "recorder";
+async function bootstrap(): Promise<void> {
+  const settings = await window.skillRecorder.getAiSettings().catch(() => null);
+  setUiLanguage(settings?.uiLanguage ?? "zh-TW");
 
-createRoot(root).render(
-  <React.StrictMode>
-    {isLibrary ? (
-      <Library />
-    ) : isRecordingControls ? (
-      <RecordingControls />
-    ) : isTerminal ? (
-      <Terminal />
-    ) : (
-      <Recorder />
-    )}
-  </React.StrictMode>,
-);
+  const route = window.location.hash.replace("#", "");
+  const isLibrary = route === "library";
+  const isRecordingControls = route === "recording-controls";
+  const isTerminal = route === "terminal";
+  document.body.dataset.route = isLibrary
+    ? "library"
+    : isRecordingControls
+      ? "recording-controls"
+      : isTerminal
+        ? "terminal"
+        : "recorder";
+
+  appRoot.render(
+    <React.StrictMode>
+      {isLibrary ? (
+        <Library />
+      ) : isRecordingControls ? (
+        <RecordingControls />
+      ) : isTerminal ? (
+        <Terminal />
+      ) : (
+        <Recorder />
+      )}
+    </React.StrictMode>,
+  );
+
+  window.requestAnimationFrame(() => installDomTranslator());
+}
+
+void bootstrap();

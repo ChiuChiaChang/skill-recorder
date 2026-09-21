@@ -16,6 +16,7 @@ import {
 } from "../../common/automation";
 import type { AutomationBuildInput, AutomationBuildProgress } from "../../common/ipc";
 import { slugifySkillName, type SkillArchitecture } from "../../common/skill";
+import { aiOutputLanguageInstruction, aiProviderSessionOptions, loadAiSettings } from "../ai-settings";
 import { requireCatalogue } from "../architectures/catalogue-registry";
 import { AgentBuilder, type BaseLive } from "../builders/agent-builder";
 import { createReadTools } from "../builders/read-tools";
@@ -170,7 +171,8 @@ export class AutomationBuilder extends AgentBuilder<LiveBuild> {
     ];
 
     const catalogue = requireCatalogue(architecture, "automation").content;
-    const systemContent = `${AUTOMATION_BUILDER_INSTRUCTIONS}\n\n${catalogue}`.trim();
+    const settings = loadAiSettings();
+    const systemContent = `${AUTOMATION_BUILDER_INSTRUCTIONS}\n\n${catalogue}\n\n${aiOutputLanguageInstruction(settings)}`.trim();
 
     const client = await this.ensureClient();
     const copilot = await client.createSession({
@@ -182,6 +184,7 @@ export class AutomationBuilder extends AgentBuilder<LiveBuild> {
       infiniteSessions: { enabled: false },
       availableTools: tools.map((t) => t.name),
       ...(this.model ? { model: this.model } : {}),
+      ...aiProviderSessionOptions(settings),
     });
 
     const live: LiveBuild = {
