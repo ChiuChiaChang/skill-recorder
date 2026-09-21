@@ -443,6 +443,9 @@ const ZH_TW: Record<string, string> = {
   "The on-screen text is not kept, so it can't be listed here.": "螢幕文字不會被保留，因此無法在此列出。",
   "Review sessions, nothing recorded yet": "檢視工作階段，目前尚無錄製內容",
   "Could not change the narration language.": "無法變更語音旁白語言。",
+  "download a debug bundle": "下載除錯套件",
+  "every day": "每天",
+  "from": "從",
 };
 
 function translateExact(value: string): string {
