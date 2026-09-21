@@ -1,5 +1,206 @@
 # Skill Recorder
 
+[繁體中文](#繁體中文) · [English](#english)
+
+<a id="繁體中文"></a>
+## 🇹🇼 繁體中文
+
+**只要把工作流程實際操作一次，Skill Recorder 就能把過程整理成 AI 可以重複執行的 Skill 或 Automation。**
+
+> [!NOTE]
+> 這是由 Microsoft `skill-recorder` Fork 出來的版本。原始專案的錄製、Session、Skill Builder 與 Automation Builder 架構都保留。
+>
+> 這個 Fork 目前另外加入 **vLLM / OpenAI-Compatible AI Provider**、**繁體中文（台灣）介面**與 **AI zh-TW 輸出**。相關功能目前在 [PR #1](https://github.com/ChiuChiaChang/skill-recorder/pull/1) 開發與驗證中。
+
+### Skill Recorder 是做什麼的？
+
+Skill Recorder 會記錄您實際完成一項工作的過程，例如：
+
+- 切換了哪些應用程式與視窗。
+- 開啟了哪些網頁與 URL。
+- 在錄製專用 Terminal 中執行的指令與輸出。
+- 螢幕畫面與關鍵 Frame。
+- 選用的語音旁白，並可在本機轉成文字。
+
+錄製完成後，AI 會把這次工作重建成：
+
+1. **Intent / 工作目標**
+2. **Ordered Steps / 實際操作步驟**
+3. **Skill**：輸出成可重複使用的 `SKILL.md`
+4. **Automation**：把同樣流程變成可排程或觸發執行的自動化工作
+
+### 基本使用流程
+
+```text
+開始錄製
+   ↓
+實際操作一次工作流程
+   ↓
+停止錄製
+   ↓
+Review Sessions / 檢視工作階段
+   ↓
+Analyze / AI 分析
+   ↓
+確認 Intent + Steps
+   ↓
+建立 Skill 或 Automation
+```
+
+Windows 可以使用：
+
+```text
+Ctrl + Shift + R
+```
+
+在任何視窗快速開始／停止錄製。
+
+### 🧠 AI Provider
+
+Microsoft 原版主要使用 **GitHub Copilot CLI**。
+
+這個 Fork 另外加入：
+
+- **GitHub Copilot**
+- **vLLM / OpenAI-Compatible Server**
+
+vLLM 設定畫面可輸入：
+
+```text
+http://127.0.0.1:8000
+```
+
+或：
+
+```text
+http://127.0.0.1:8000/v1
+```
+
+程式會自動查詢：
+
+```http
+GET /v1/models
+```
+
+並將伺服器上可用的 AI Model 自動載入下拉選單，不需要手動輸入 Model ID。
+
+也支援選用的 Bearer API Key。
+
+> [!IMPORTANT]
+> vLLM Model 建議支援 **Streaming** 與 **Tool / Function Calling**。
+> 如果希望 AI 也能理解錄製畫面中的圖片／Frame，建議使用支援 **Vision** 的模型。
+
+### 🌐 繁體中文支援
+
+設定中可分別選擇：
+
+**UI Language / 介面語言**
+
+- English
+- 繁體中文（台灣）
+
+**AI Output Language / AI 輸出語言**
+
+- English
+- 繁體中文（台灣 / zh-TW）
+
+選擇 `zh-TW` 後，AI 會以繁體中文產生：
+
+- Analysis Title
+- Intent
+- Rationale
+- Steps
+- Skill 說明與操作內容
+- Automation 說明與步驟
+
+URL、檔案路徑、Command、Code、Tool Name、Model ID、Schema Key 等技術內容則保持原文，避免翻譯後造成指令錯誤。
+
+### Windows 11：從 GitHub 執行這個 Fork
+
+建議使用 **Node.js 24.19 或更新的 Node 24 版本**。
+
+如果要測試目前的 vLLM + zh-TW 開發版本：
+
+```cmd
+cd /d D:\CorinAI
+
+git clone -b feature/vllm-zh-tw-1.0.0 https://github.com/ChiuChiaChang/skill-recorder.git skill-recorder-vllm
+
+cd skill-recorder-vllm
+
+npm ci
+
+npm run electron:install-reviewed
+
+npm run compliance:licenses
+
+npm run build
+
+npm run dev
+```
+
+如果已經 Clone 過，只要更新：
+
+```cmd
+cd /d D:\CorinAI\skill-recorder-vllm
+
+git pull origin feature/vllm-zh-tw-1.0.0
+
+npm run build
+
+npm run dev
+```
+
+### vLLM 設定方式
+
+程式啟動後：
+
+```text
+Review Sessions
+   ↓
+Settings / 設定
+   ↓
+AI Provider
+   ↓
+vLLM / OpenAI-Compatible
+```
+
+接著：
+
+1. 輸入 vLLM Server URL。
+2. 等待程式自動讀取 `/v1/models`。
+3. 從 Model 下拉選單選擇模型。
+4. UI Language 選擇 **繁體中文（台灣）**。
+5. AI Output Language 選擇 **繁體中文（台灣）**。
+6. 按 **儲存**。
+7. 開始錄製並進行 Analyze。
+
+### 隱私與資料傳送
+
+錄製、儲存、Frame Extraction、以及選用的語音轉文字都在本機進行。
+
+真正按下 **Analyze** 時，分析所需的 Timeline、畫面、語音文字及必要的 Terminal 片段才會送到您設定的 AI Provider：
+
+- 選擇 **GitHub Copilot**：由 GitHub 服務處理。
+- 選擇 **vLLM**：送到您在 Settings 中指定的 OpenAI-Compatible Server URL。
+
+Skill Recorder 的 Advanced Protection 會在本機先嘗試遮蔽密碼、Key、Email、卡號、ID 等敏感資訊，但任何自動遮蔽都不能保證 100% 正確，因此仍建議不要在錄影中顯示密碼、Token、API Key 或其他機密資訊。
+
+### 原始 Microsoft 專案
+
+上游專案：
+
+https://github.com/microsoft/skill-recorder
+
+本 Fork：
+
+https://github.com/ChiuChiaChang/skill-recorder
+
+---
+
+<a id="english"></a>
+## English
+
 **Record yourself doing a task once, then turn it into a skill your AI agent can repeat.**
 
 > [!TIP]
