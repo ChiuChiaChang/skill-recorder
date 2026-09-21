@@ -10,6 +10,7 @@ import "./App.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing #root");
+const appRoot = createRoot(root);
 
 async function bootstrap(): Promise<void> {
   const settings = await window.skillRecorder.getAiSettings().catch(() => null);
@@ -27,7 +28,7 @@ async function bootstrap(): Promise<void> {
         ? "terminal"
         : "recorder";
 
-  createRoot(root).render(
+  appRoot.render(
     <React.StrictMode>
       {isLibrary ? (
         <Library />
