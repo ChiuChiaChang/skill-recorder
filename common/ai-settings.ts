@@ -21,8 +21,8 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   vllmBaseUrl: "http://127.0.0.1:8000/v1",
   vllmApiKey: "",
   vllmModel: "",
-  uiLanguage: "en",
-  outputLanguage: "en",
+  uiLanguage: "zh-TW",
+  outputLanguage: "zh-TW",
 };
 
 export interface AiSettingsResult {
