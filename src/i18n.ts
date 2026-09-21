@@ -1,6 +1,6 @@
 import type { UiLanguage } from "../common/ai-settings";
 
-let activeLanguage: UiLanguage = "en";
+let activeLanguage: UiLanguage = "zh-TW";
 let observer: MutationObserver | null = null;
 const originalText = new WeakMap<Text, string>();
 const renderedText = new WeakMap<Text, string>();
@@ -260,31 +260,246 @@ const ZH_TW: Record<string, string> = {
   "By default, before anything is sent, this computer hides sensitive details like passwords, keys, emails, and card or ID numbers from that text and from your screen images. You can turn this off below.": "預設在傳送任何資料前，此電腦會先遮蔽文字與螢幕影像中的密碼、金鑰、Email、卡號或身分證號等敏感資訊。您可以在下方關閉此功能。",
   "Do not type, paste, display, copy, or narrate passwords, access tokens, API keys, credentials, secrets, or other sensitive or confidential information. Anything visible on screen can appear in the recording, and copied text previews and narration are captured too.": "請勿輸入、貼上、顯示、複製或口述密碼、Access Token、API Key、登入憑證、密鑰或其他敏感／機密資訊。螢幕上可見的內容都可能出現在錄製中，複製文字的預覽與語音旁白也會被擷取。",
   "This ran on your computer and hid these before anything was sent to your selected AI provider. It covers secrets and personal details in the text that is sent (window titles, URLs, clipboard, terminal commands, notes, and voice) and in your screen images. It is on by default; you can turn it off in What's recorded.": "此保護機制在您的電腦本機執行，並在資料送往所選 AI 提供者前先遮蔽敏感內容。它會處理要傳送的文字（視窗標題、網址、剪貼簿、終端機指令、註記與語音）以及螢幕影像。此功能預設開啟，可在「錄製哪些內容」中關閉。",
+  "toggles from anywhere": "可在任何視窗開始／停止錄製",
+  "Starting": "啟動中",
+  "Starting…": "啟動中…",
+  "Starting...": "啟動中…",
+  "Stopping": "停止中",
+  "Stopping…": "停止中…",
+  "Saving": "儲存中",
+  "Saving…": "儲存中…",
+  "Saving...": "儲存中…",
+  "Discarding": "捨棄中",
+  "Discarding…": "捨棄中…",
+  "Discarding...": "捨棄中…",
+  "Capturing": "錄製中",
+  "Ready": "就緒",
+  "Off": "關閉",
+  "Retry": "重試",
+  "Opening": "開啟中",
+  "Terminal": "終端機",
+  "Discard": "捨棄",
+  "Done": "完成",
+  "Keep recording": "繼續錄製",
+  "Selected": "已選擇",
+  "Hide": "隱藏",
+  "Review": "檢視",
+  "Got it": "我知道了",
+  "Checking…": "檢查中…",
+  "Couldn't set up the model": "無法設定本機模型",
+  "Screen video, activity, recorded-terminal output, and voice segments will be permanently deleted.": "螢幕影片、操作活動、錄製終端機輸出與語音片段都將永久刪除。",
+  "Closing the recording will stop the command and save its output as interrupted.": "結束錄製會停止目前指令，並將其輸出以「已中斷」狀態儲存。",
+  "Keep passwords, access tokens, API keys, and other sensitive or confidential information off screen and out of narration.": "請勿讓密碼、Access Token、API Key 或其他敏感／機密資訊出現在螢幕或語音旁白中。",
+  "If you open the recorded terminal from the floating bar: its commands, working folders, exit status, timing, and complete terminal output.": "如果從浮動工具列開啟錄製終端機，會記錄其指令、工作資料夾、結束狀態、時間資訊與完整終端機輸出。",
+  "Its full output stays with this recording and has no app-imposed size limit, so long-running or noisy commands can make the saved recording much larger.": "完整終端機輸出會保留在本次錄製中，程式本身不限制大小，因此長時間或大量輸出的指令可能讓錄製檔明顯變大。",
+  "Skill Recorder does not edit shell profiles, install global hooks, watch existing terminals, or keep recording commands after this recording ends.": "Skill Recorder 不會修改 Shell Profile、不會安裝全域 Hook、不會監看既有終端機，也不會在本次錄製結束後繼續記錄指令。",
+  "Off by default. Choose the initial state and microphone with Narrate, then use the floating recording bar.": "預設關閉。可先在「語音旁白」選擇初始狀態與麥克風，錄製中再使用浮動工具列控制。",
+  "Enabling Narrate briefly opens and releases the microphone so the app can request permission and show the available inputs. No audio is saved during this check.": "啟用語音旁白時，程式會短暫開啟再釋放麥克風，以取得權限並顯示可用輸入裝置；此檢查過程不會儲存音訊。",
+  "Turning the microphone off ends that voice segment and releases the device. Turning it on again, or switching inputs, starts a new segment linked to the same recording timeline.": "關閉麥克風會結束目前語音片段並釋放裝置；再次開啟或切換輸入來源時，會建立新的語音片段並連結到同一錄製時間軸。",
+  "The recording can be turned into text on this computer using an on-device model. The transcript stays in the language you select from Whisper's 99 supported choices. The first transcription needs a one-time ~252 MB download that you choose when to start.": "錄製語音可使用本機模型轉成文字。逐字稿會保留您所選的語言，支援 Whisper 的 99 種語言。第一次轉錄需要一次性下載約 252 MB 的模型，下載時機由您決定。",
+  "On by default. Before your recording is analyzed, it checks the text and your screen images on this computer and hides sensitive details. Turn it off to send everything as recorded.": "預設開啟。進行分析前，程式會在本機檢查文字與螢幕影像並遮蔽敏感資訊；若關閉此功能，資料將依原始錄製內容送出。",
+  "It hides sensitive details like passwords, keys, emails, and card or ID numbers, both in the text that is sent (including narration and terminal output) and in your screen images.": "它會遮蔽密碼、金鑰、Email、卡號或身分證號等敏感資訊，涵蓋送出的文字（包括語音旁白與終端機輸出）以及螢幕影像。",
+  "Turning it off sends your recording as recorded. That can make the analysis more accurate, but nothing is hidden, so only do it when the recording has nothing sensitive.": "關閉後會依原始內容送出錄製資料，可能提高分析準確度，但不再遮蔽任何敏感資訊，因此請只在錄製內容不含敏感資料時使用。",
+  "No method is 100% effective. It can miss details or mask the wrong ones. Treat it as a safety net, not a guarantee, and still avoid capturing anything secret.": "任何方法都無法保證 100% 正確，可能漏掉資訊或誤遮蔽內容。請把它視為額外保護，而非絕對保證，仍應避免錄製任何機密資料。",
+  "Payment card number": "付款卡號",
+  "US Social Security number": "美國社會安全號碼",
+  "Phone number": "電話號碼",
+  "Email address": "Email 地址",
+  "Window title": "視窗標題",
+  "Terminal command": "終端機指令",
+  "Terminal output": "終端機輸出",
+  "Clipboard": "剪貼簿",
+  "Note": "註記",
+  "Voice narration": "語音旁白",
+  "On-screen text": "螢幕文字",
+  "Other captured text": "其他擷取文字",
+  "Couldn't create the debug bundle.": "無法建立除錯套件。",
+  "Couldn't sign in to Copilot.": "無法登入 GitHub Copilot。",
+  "Could not cancel Copilot sign-in during panel cleanup.": "清理面板時無法取消 GitHub Copilot 登入。",
+  "Or run this command yourself:": "或自行執行此指令：",
+  "Appears in your sessions list": "顯示在工作階段列表中",
+  "View this recording's analysis": "查看此錄製的分析",
+  "Create…": "建立…",
+  "Working…": "處理中…",
+  "Starting…": "啟動中…",
+  "Stopping…": "停止中…",
+  "Planning failed": "規劃失敗",
+  "A terminal command is still running": "仍有終端機指令正在執行",
+  "Choose microphone": "選擇麥克風",
+  "Close terminal and discard": "關閉終端機並捨棄",
+  "Close terminal and save": "關閉終端機並儲存",
+  "Open a terminal captured only with this recording": "開啟僅屬於本次錄製的終端機",
+  "Open recorded terminal": "開啟錄製終端機",
+  "Output is saved only with this recording": "輸出只會儲存在本次錄製中",
+  "Command running": "指令執行中",
+  "Shell exited": "Shell 已結束",
+  "Switching shell": "正在切換 Shell",
+  "Ready": "就緒",
+  "Hide": "隱藏",
+  "Afrikaans": "南非語",
+  "Albanian": "阿爾巴尼亞語",
+  "Amharic": "阿姆哈拉語",
+  "Arabic": "阿拉伯語",
+  "Armenian": "亞美尼亞語",
+  "Assamese": "阿薩姆語",
+  "Azerbaijani": "亞塞拜然語",
+  "Bashkir": "巴什基爾語",
+  "Basque": "巴斯克語",
+  "Belarusian": "白俄羅斯語",
+  "Bengali": "孟加拉語",
+  "Bosnian": "波士尼亞語",
+  "Breton": "布列塔尼語",
+  "Bulgarian": "保加利亞語",
+  "Catalan": "加泰隆尼亞語",
+  "Chinese": "中文",
+  "Croatian": "克羅埃西亞語",
+  "Czech": "捷克語",
+  "Danish": "丹麥語",
+  "Dutch": "荷蘭語",
+  "Estonian": "愛沙尼亞語",
+  "Faroese": "法羅語",
+  "Finnish": "芬蘭語",
+  "French": "法語",
+  "Galician": "加利西亞語",
+  "Georgian": "喬治亞語",
+  "German": "德語",
+  "Greek": "希臘語",
+  "Gujarati": "古吉拉特語",
+  "Haitian Creole": "海地克里奧語",
+  "Hausa": "豪薩語",
+  "Hawaiian": "夏威夷語",
+  "Hebrew": "希伯來語",
+  "Hindi": "印地語",
+  "Hungarian": "匈牙利語",
+  "Icelandic": "冰島語",
+  "Indonesian": "印尼語",
+  "Italian": "義大利語",
+  "Japanese": "日語",
+  "Javanese": "爪哇語",
+  "Kannada": "卡納達語",
+  "Kazakh": "哈薩克語",
+  "Khmer": "高棉語",
+  "Korean": "韓語",
+  "Lao": "寮語",
+  "Latin": "拉丁語",
+  "Latvian": "拉脫維亞語",
+  "Lingala": "林加拉語",
+  "Lithuanian": "立陶宛語",
+  "Luxembourgish": "盧森堡語",
+  "Macedonian": "馬其頓語",
+  "Malagasy": "馬達加斯加語",
+  "Malay": "馬來語",
+  "Malayalam": "馬拉雅拉姆語",
+  "Maltese": "馬爾他語",
+  "Maori": "毛利語",
+  "Marathi": "馬拉地語",
+  "Mongolian": "蒙古語",
+  "Myanmar": "緬甸語",
+  "Nepali": "尼泊爾語",
+  "Norwegian": "挪威語",
+  "Nynorsk": "新挪威語",
+  "Occitan": "奧克語",
+  "Pashto": "普什圖語",
+  "Persian": "波斯語",
+  "Polish": "波蘭語",
+  "Portuguese": "葡萄牙語",
+  "Punjabi": "旁遮普語",
+  "Romanian": "羅馬尼亞語",
+  "Russian": "俄語",
+  "Sanskrit": "梵語",
+  "Serbian": "塞爾維亞語",
+  "Shona": "紹納語",
+  "Sindhi": "信德語",
+  "Sinhala": "僧伽羅語",
+  "Slovak": "斯洛伐克語",
+  "Slovenian": "斯洛維尼亞語",
+  "Somali": "索馬利語",
+  "Spanish": "西班牙語",
+  "Sundanese": "巽他語",
+  "Swahili": "史瓦希里語",
+  "Swedish": "瑞典語",
+  "Tagalog": "塔加洛語",
+  "Tajik": "塔吉克語",
+  "Tamil": "坦米爾語",
+  "Tatar": "韃靼語",
+  "Telugu": "泰盧固語",
+  "Thai": "泰語",
+  "Tibetan": "藏語",
+  "Turkish": "土耳其語",
+  "Turkmen": "土庫曼語",
+  "Ukrainian": "烏克蘭語",
+  "Urdu": "烏爾都語",
+  "Uzbek": "烏茲別克語",
+  "Vietnamese": "越南語",
+  "Welsh": "威爾斯語",
+  "Yiddish": "意第緒語",
+  "Yoruba": "約魯巴語",
 };
 
 function translateExact(value: string): string {
   if (activeLanguage !== "zh-TW") return value;
-  const direct = ZH_TW[value];
+  const normalized = value.replace(/\s+/g, " ").trim();
+  const direct = ZH_TW[normalized];
   if (direct) return direct;
 
-  let match = value.match(/^(\d+) ready to analyze$/);
+  let match = normalized.match(/^(\d+) ready to analyze$/);
   if (match) return `${match[1]} 筆可進行分析`;
-  match = value.match(/^(\d+) recordings?$/);
+  match = normalized.match(/^(\d+) recordings?$/);
   if (match) return `${match[1]} 筆錄製`;
-  match = value.match(/^(\d+) steps$/);
+  match = normalized.match(/^(\d+) steps$/);
   if (match) return `${match[1]} 個步驟`;
-  match = value.match(/^(\d+) events captured$/);
+  match = normalized.match(/^(\d+) events captured$/);
   if (match) return `已擷取 ${match[1]} 個事件`;
-  match = value.match(/^Ready to capture · (.+)$/);
+  match = normalized.match(/^Ready to capture · (.+)$/);
   if (match) return `準備錄製 · ${match[1]}`;
-  match = value.match(/^(Ctrl\+Shift\+R|⌘⇧R) toggles from anywhere$/);
+  match = normalized.match(/^(Ctrl\+Shift\+R|⌘⇧R) toggles from anywhere$/);
   if (match) return `${match[1]} 可在任何視窗切換錄製`;
-  match = value.match(/^Review sessions, (\d+) ready to analyze$/);
+  match = normalized.match(/^Review sessions, (\d+) ready to analyze$/);
   if (match) return `檢視工作階段，${match[1]} 筆可進行分析`;
-  match = value.match(/^Review sessions, (\d+) recorded$/);
+  match = normalized.match(/^Review sessions, (\d+) recorded$/);
   if (match) return `檢視工作階段，共 ${match[1]} 筆錄製`;
-  match = value.match(/^Analysis ready \(revision (\d+)\)\.$/);
+  match = normalized.match(/^Analysis ready \(revision (\d+)\)\.$/);
   if (match) return `分析完成（修訂版 ${match[1]}）`;
+
+  match = normalized.match(/^(?:Screen|Display) (\d+)$/i);
+  if (match) return `螢幕 ${match[1]}`;
+
+  match = normalized.match(/^Using (.+)$/);
+  if (match) return `使用中：${match[1]}`;
+
+  match = normalized.match(/^Next: (.+)$/);
+  if (match) return `下次使用：${match[1]}`;
+
+  match = normalized.match(/^Setting up the on-device model…\s*(\d+)%$/);
+  if (match) return `正在設定本機模型… ${match[1]}%`;
+
+  match = normalized.match(/^(\d+) sensitive details?$/);
+  if (match) return `${match[1]} 筆敏感資訊`;
+
+  match = normalized.match(/^(\d+) on-screen areas?$/);
+  if (match) return `${match[1]} 個螢幕區域`;
+
+  match = normalized.match(/^Hid (\d+) sensitive details? before sending$/);
+  if (match) return `傳送前已遮蔽 ${match[1]} 筆敏感資訊`;
+
+  match = normalized.match(/^Blurred (\d+) on-screen areas? in screen images before sending$/);
+  if (match) return `傳送前已在螢幕影像中模糊 ${match[1]} 個區域`;
+
+  match = normalized.match(/^Hid (\d+) sensitive details? and blurred (\d+) on-screen areas? before sending$/);
+  if (match) return `傳送前已遮蔽 ${match[1]} 筆敏感資訊，並模糊 ${match[2]} 個螢幕區域`;
+
+  match = normalized.match(/^(\d+) areas? covered across (\d+) images?\. The on-screen text is not kept, so it can't be listed here\.$/);
+  if (match) return `已在 ${match[2]} 張影像中遮蔽 ${match[1]} 個區域。螢幕文字不會被保留，因此無法在此列出。`;
+
+  match = normalized.match(/^Focus recorded terminal\. (.+)$/);
+  if (match) return `切換至錄製終端機。${match[1]}`;
+
+  match = normalized.match(/^Mute (.+) · (.+) transcript$/);
+  if (match) return `靜音 ${match[1]} · ${match[2]}逐字稿`;
+
+  match = normalized.match(/^Unmute (.+) · (.+) transcript$/);
+  if (match) return `取消靜音 ${match[1]} · ${match[2]}逐字稿`;
+
   return value;
 }
 
@@ -300,7 +515,7 @@ function shouldSkip(text: Text): boolean {
   const parent = text.parentElement;
   if (!parent) return false;
   if (parent.closest(".xterm")) return true;
-  return Boolean(parent.closest("code, pre, kbd, samp, textarea, input, select, option"));
+  return Boolean(parent.closest("code, pre, kbd, samp, textarea, input"));
 }
 
 function translateTextNode(node: Text): void {
