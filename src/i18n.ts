@@ -419,6 +419,30 @@ const ZH_TW: Record<string, string> = {
   "Welsh": "威爾斯語",
   "Yiddish": "意第緒語",
   "Yoruba": "約魯巴語",
+  "A recording has no schedule of its own — set when this automation should run.": "錄製本身沒有排程，請設定此自動化要在何時執行。",
+  "Click any step to edit, or a highlighted value to change it. Reorder, add or remove as needed.": "點選任一步驟即可編輯，或點選醒目顯示的值進行修改；您也可以依需要重新排序、新增或移除。",
+  "Couldn't save": "無法儲存",
+  "Create & export automation": "建立並匯出自動化",
+  "Do not analyze a recording that may contain passwords, access tokens, API keys, credentials, secrets, or other sensitive or confidential information.": "若錄製內容可能包含密碼、Access Token、API Key、登入憑證、密鑰或其他敏感／機密資訊，請勿進行分析。",
+  "Download .zip": "下載 .zip",
+  "First analysis downloads the ~250 MB voice model once — later runs skip this.": "第一次分析會下載約 250 MB 的語音模型一次，之後不需要重複下載。",
+  "Open automation →": "開啟自動化 →",
+  "Open skill →": "開啟技能 →",
+  "Plan the automation →": "規劃自動化 →",
+  "Plan the skill →": "規劃技能 →",
+  "Re-analyze with voice": "加入語音重新分析",
+  "Replace analysis": "取代目前分析",
+  "Reveal bundle": "顯示套件位置",
+  "Reveal file": "顯示檔案位置",
+  "This bundle is everything captured in this recording — screen video, screenshots, visited URLs, clipboard contents, and any voice narration and transcript. Share it only with people you trust.": "此套件包含本次錄製擷取的所有內容，包括螢幕影片、截圖、瀏覽過的 URL、剪貼簿內容，以及任何語音旁白與逐字稿。請只分享給您信任的人。",
+  "View this recording": "查看此錄製",
+  "+ Add time": "+ 新增時間",
+  "1 area": "1 個區域",
+  "1 image": "1 張影像",
+  "covered across": "分布於",
+  "The on-screen text is not kept, so it can't be listed here.": "螢幕文字不會被保留，因此無法在此列出。",
+  "Review sessions, nothing recorded yet": "檢視工作階段，目前尚無錄製內容",
+  "Could not change the narration language.": "無法變更語音旁白語言。",
 };
 
 function translateExact(value: string): string {
@@ -484,6 +508,21 @@ function translateExact(value: string): string {
 
   match = normalized.match(/^Unmute (.+) · (.+) transcript$/);
   if (match) return `取消靜音 ${match[1]} · ${match[2]}逐字稿`;
+
+  match = normalized.match(/^(\d+) areas?$/);
+  if (match) return `${match[1]} 個區域`;
+
+  match = normalized.match(/^(\d+) images?$/);
+  if (match) return `${match[1]} 張影像`;
+
+  match = normalized.match(/^Mute (.+)\. Narration is transcribed in (.+)\.$/);
+  if (match) return `將 ${match[1]} 靜音。語音旁白會以 ${match[2]} 轉錄。`;
+
+  match = normalized.match(/^Retry microphone\. (.*)$/);
+  if (match) return `重試麥克風。${match[1]}`;
+
+  match = normalized.match(/^Unmute (.+) for (.+) narration$/);
+  if (match) return `取消靜音 ${match[1]}，並使用 ${match[2]} 進行語音旁白`;
 
   return value;
 }
